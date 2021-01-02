@@ -1,0 +1,11 @@
+[package]
+name = "lazygui"
+version = "0.1.0"
+authors = ["Jesse Duffield <jessedduffield@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tui = "0.14"
+termion = "1.5"
