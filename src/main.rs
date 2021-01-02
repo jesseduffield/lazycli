@@ -102,7 +102,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .bg(Color::LightGreen)
                         .add_modifier(Modifier::BOLD),
                 )
-                .highlight_symbol(">> ");
+                .highlight_symbol("> ");
 
             // We can now render the item list
             f.render_stateful_widget(items, chunks[0], &mut app.items.state);
@@ -116,9 +116,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             Event::Input(input) => match input {
                 Key::Char('q') => {
                     break;
-                }
-                Key::Left => {
-                    app.items.unselect();
                 }
                 Key::Down => {
                     app.items.next();
