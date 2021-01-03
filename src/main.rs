@@ -18,6 +18,11 @@ use tui::{
     Terminal,
 };
 
+struct Config {
+    pub lines_to_ignore: u32,
+    pub command: String,
+}
+
 /// This struct holds the current state of the app. In particular, it has the `items` field which is a wrapper
 /// around `ListState`. Keeping track of the items state let us render the associated widget with its state
 /// and have access to features such as natural scrolling.

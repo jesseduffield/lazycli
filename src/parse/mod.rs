@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::iter::FromIterator;
 
 #[derive(PartialEq, Debug)]
-struct Row {
+pub struct Row {
   original_line: String,
   cells: Vec<String>,
 }
@@ -16,7 +16,7 @@ impl Row {
   }
 }
 
-fn parse(text: String) -> Vec<Row> {
+pub fn parse(text: String) -> Vec<Row> {
   let column_indices = get_column_indices(&text);
 
   text
@@ -40,10 +40,6 @@ fn parse(text: String) -> Vec<Row> {
 }
 
 fn get_column_indices(text: &String) -> Vec<usize> {
-  // split into lines, see where the columns begin.
-
-  // we need a map of all the places where there are spaces. for each line we will remove items from this map.
-
   let mut lines = text.trim_end().lines();
 
   let first_line = lines.next().unwrap_or_default();
