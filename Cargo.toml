@@ -9,3 +9,6 @@ edition = "2018"
 [dependencies]
 tui = "0.14"
 termion = "1.5"
+
+[dev-dependencies]
+pretty_assertions = "0.6.1"
