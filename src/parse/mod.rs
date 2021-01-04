@@ -3,8 +3,8 @@ use std::iter::FromIterator;
 
 #[derive(PartialEq, Debug)]
 pub struct Row {
-  original_line: String,
-  cells: Vec<String>,
+  pub original_line: String,
+  pub cells: Vec<String>,
 }
 
 impl Row {
