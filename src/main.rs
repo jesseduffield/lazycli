@@ -4,6 +4,7 @@ mod util;
 
 use crate::util::event::{Event, Events};
 use std::cmp;
+use std::env;
 use std::{error::Error, io};
 use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
 use tui::{
@@ -29,7 +30,7 @@ impl<'a> App<'a> {
 }
 
 fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
-    let output = command::run_command("ls -l").unwrap();
+    let output = command::run_command(command).unwrap();
 
     println!("{:?}", output);
 
@@ -43,7 +44,8 @@ fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let raw_rows = get_rows_from_command("ls -l", 1)
+    let args = env::args().skip(1).collect::<Vec<String>>().join(" ");
+    let raw_rows = get_rows_from_command(&args, 1)
         .into_iter()
         .map(|row| row.cells.iter().map(|cell| cell.to_owned()).collect())
         .collect::<Vec<Vec<String>>>();
