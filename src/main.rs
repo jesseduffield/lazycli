@@ -1,17 +1,18 @@
 #[allow(dead_code)]
+mod args;
 mod parse;
 mod util;
 
 use crate::util::event::{Event, Events};
+use args::Args;
 use std::cmp;
-use std::env;
 use std::{error::Error, io};
 use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, Cell, Row, Table},
+    widgets::{Cell, Row, Table},
     Terminal,
 };
 use util::command;
@@ -62,13 +63,17 @@ fn prepare_terminal() -> Result<
 }
 
 fn get_column_widths(app: &App) -> std::vec::Vec<tui::layout::Constraint> {
+    if app.table.rows.len() == 0 {
+        return vec![];
+    }
+
     app.table
         .rows
         .iter()
         .map(|row| row.iter().map(|cell| cell.len()).collect())
         .fold(
             std::iter::repeat(0)
-                .take(app.table.rows.len())
+                .take(app.table.rows[0].len())
                 .collect::<Vec<usize>>(),
             |acc: Vec<usize>, curr: Vec<usize>| {
                 acc.into_iter()
@@ -83,11 +88,9 @@ fn get_column_widths(app: &App) -> std::vec::Vec<tui::layout::Constraint> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let lines_to_skip = 0;
-    let mut args = env::args().skip(1).collect::<Vec<String>>();
-    if args.len() > 0 && args[0].start_with
-    let command = args.join(" ");
-    let raw_rows = get_rows_from_command(&args, lines_to_skip)
+    let args = Args::new();
+
+    let raw_rows = get_rows_from_command(&args.command, args.lines_to_skip)
         .into_iter()
         .map(|row| row.cells.iter().map(|cell| cell.to_owned()).collect())
         .collect::<Vec<Vec<String>>>();
