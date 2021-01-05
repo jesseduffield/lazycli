@@ -43,7 +43,6 @@ fn get_column_indices(text: &String) -> Vec<usize> {
   let mut lines = text.trim_end().lines();
 
   let first_line = lines.next().unwrap_or_default();
-  println!("{}", first_line);
 
   let spaces_iter = first_line
     .char_indices()
@@ -52,8 +51,6 @@ fn get_column_indices(text: &String) -> Vec<usize> {
     .map(|(index, _char)| index);
 
   let mut spaces_set: HashSet<usize> = HashSet::from_iter(spaces_iter);
-
-  println!("{:?}", spaces_set);
 
   for line in lines {
     // TODO consider how to remove the .clone() here
@@ -64,15 +61,10 @@ fn get_column_indices(text: &String) -> Vec<usize> {
         }
       }
     }
-
-    println!("{}", line)
   }
-
-  println!("{:?}", spaces_set);
 
   let mut spaces = spaces_set.into_iter().collect::<Vec<usize>>();
   spaces.sort();
-  println!("{:?}", spaces);
   let mut result = spaces
     .iter()
     .enumerate()
@@ -83,8 +75,6 @@ fn get_column_indices(text: &String) -> Vec<usize> {
     .collect::<Vec<usize>>();
 
   result.insert(0, 0);
-
-  println!("{:?}", result);
 
   result
 }

@@ -47,8 +47,6 @@ impl App {
 fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
     let output = command::run_command(command).unwrap();
 
-    println!("{:?}", output);
-
     let trimmed_output = output
         .lines()
         .skip(skip_lines)
