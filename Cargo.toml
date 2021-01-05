@@ -1,5 +1,5 @@
 [package]
-name = "lazygui"
+name = "lazycli"
 version = "0.1.0"
 authors = ["Jesse Duffield <jessedduffield@gmail.com>"]
 edition = "2018"
