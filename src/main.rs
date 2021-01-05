@@ -43,9 +43,51 @@ fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
     parse::parse(trimmed_output)
 }
 
+fn prepare_terminal() -> Result<
+    tui::Terminal<
+        tui::backend::TermionBackend<
+            termion::screen::AlternateScreen<
+                termion::input::MouseTerminal<termion::raw::RawTerminal<std::io::Stdout>>,
+            >,
+        >,
+    >,
+    std::io::Error,
+> {
+    // Terminal initialization
+    let stdout = io::stdout().into_raw_mode()?;
+    let stdout = MouseTerminal::from(stdout);
+    let stdout = AlternateScreen::from(stdout);
+    let backend = TermionBackend::new(stdout);
+    Terminal::new(backend)
+}
+
+fn get_column_widths(app: &App) -> std::vec::Vec<tui::layout::Constraint> {
+    app.table
+        .rows
+        .iter()
+        .map(|row| row.iter().map(|cell| cell.len()).collect())
+        .fold(
+            std::iter::repeat(0)
+                .take(app.table.rows.len())
+                .collect::<Vec<usize>>(),
+            |acc: Vec<usize>, curr: Vec<usize>| {
+                acc.into_iter()
+                    .zip(curr.into_iter())
+                    .map(|(a, b)| cmp::max(a, b))
+                    .collect()
+            },
+        )
+        .into_iter()
+        .map(|width| Constraint::Length(width as u16))
+        .collect::<Vec<Constraint>>()
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
-    let args = env::args().skip(1).collect::<Vec<String>>().join(" ");
-    let raw_rows = get_rows_from_command(&args, 1)
+    let lines_to_skip = 0;
+    let mut args = env::args().skip(1).collect::<Vec<String>>();
+    if args.len() > 0 && args[0].start_with
+    let command = args.join(" ");
+    let raw_rows = get_rows_from_command(&args, lines_to_skip)
         .into_iter()
         .map(|row| row.cells.iter().map(|cell| cell.to_owned()).collect())
         .collect::<Vec<Vec<String>>>();
@@ -55,12 +97,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|row| row.iter().map(|cell| cell.as_str()).collect())
         .collect::<Vec<Vec<&str>>>();
 
-    // Terminal initialization
-    let stdout = io::stdout().into_raw_mode()?;
-    let stdout = MouseTerminal::from(stdout);
-    let stdout = AlternateScreen::from(stdout);
-    let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = prepare_terminal()?;
 
     let events = Events::new();
 
@@ -83,42 +120,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Row::new(cells).height(1)
             });
 
-            // let widths = app
-            //     .table
-            //     .rows
-            //     .iter()
-            //     .map(|row| row.iter().map(|cell| cell.len()).collect())
-            //     .fold(
-            //         std::iter::repeat(0)
-            //             .take(app.table.rows.len())
-            //             .collect::<Vec<usize>>(),
-            //         |acc: Vec<usize>, curr: Vec<usize>| {
-            //             acc.into_iter()
-            //                 .zip(curr.into_iter())
-            //                 .map(|(a, b)| cmp::max(a, b))
-            //                 .collect()
-            //         },
-            //     )
-            //     .into_iter()
-            //     .map(|width| Constraint::Length(width as u16))
-            //     .collect();
+            let widths = get_column_widths(&app);
 
             let t = Table::new(rows)
                 // .block(Block::default().borders(Borders::ALL).title("Table"))
                 .highlight_style(selected_style)
                 .highlight_symbol("> ")
-                .widths(&[
-                    Constraint::Length(10),
-                    Constraint::Length(10),
-                    Constraint::Length(10),
-                    Constraint::Length(10),
-                    Constraint::Length(10),
-                    Constraint::Length(10),
-                    Constraint::Length(10),
-                    Constraint::Length(10),
-                    Constraint::Length(10),
-                ])
-                .column_spacing(1);
+                .widths(&widths)
+                .column_spacing(2);
             f.render_stateful_widget(t, rects[0], &mut app.table.state);
         })?;
 
