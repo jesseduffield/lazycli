@@ -101,6 +101,31 @@ impl Config {
           ],
           lines_to_skip: 0,
         },
+        Profile {
+          name: String::from("git branch"),
+          registered_commands: vec![String::from("git branch")],
+          key_bindings: vec![KeyBinding {
+            key: 'c',
+            command: String::from("git checkout $1"),
+            confirm: true,
+            after: After::Refresh,
+          }],
+          lines_to_skip: 0,
+        },
+        Profile {
+          name: String::from("lsof -iTCP | grep LISTEN"),
+          registered_commands: vec![
+            String::from("lsof -iTCP | grep LISTEN"),
+            String::from("lsof -iTCP"),
+          ],
+          key_bindings: vec![KeyBinding {
+            key: 'd',
+            command: String::from("kill -9 $1"),
+            confirm: true,
+            after: After::Refresh,
+          }],
+          lines_to_skip: 0,
+        },
       ],
     }
   }
