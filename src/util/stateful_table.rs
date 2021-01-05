@@ -1,12 +1,12 @@
 use tui::widgets::TableState;
 
-pub struct StatefulTable<'a> {
+pub struct StatefulTable {
   pub state: TableState,
-  pub rows: Vec<Vec<&'a str>>,
+  pub rows: Vec<Vec<String>>,
 }
 
-impl<'a> StatefulTable<'a> {
-  pub fn new(rows: Vec<Vec<&'a str>>) -> StatefulTable<'a> {
+impl StatefulTable {
+  pub fn new(rows: Vec<Vec<String>>) -> StatefulTable {
     StatefulTable {
       state: TableState::default(),
       rows,
