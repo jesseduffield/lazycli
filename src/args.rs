@@ -23,11 +23,13 @@ impl Args {
       .arg(Arg::new("command").multiple(true))
       .get_matches();
 
-    let command = matches
-      .values_of("command")
-      .unwrap()
-      .collect::<Vec<&str>>()
-      .join(" ");
+    let command = match matches.values_of("command") {
+      Some(matches) => matches.collect::<Vec<&str>>().join(" "),
+      None => {
+        eprintln!("Usage: Command must be supplied, e.g.: `lazycli -- ls -l`");
+        std::process::exit(1);
+      }
+    };
 
     let lines_to_skip = match matches.value_of("ignore") {
       None => 0,

@@ -62,18 +62,18 @@ fn prepare_terminal() -> Result<
     Terminal::new(backend)
 }
 
-fn get_column_widths(app: &App) -> std::vec::Vec<tui::layout::Constraint> {
-    if app.table.rows.len() == 0 {
+fn get_column_widths(
+    rows: &std::vec::Vec<std::vec::Vec<&str>>,
+) -> std::vec::Vec<tui::layout::Constraint> {
+    if rows.len() == 0 {
         return vec![];
     }
 
-    app.table
-        .rows
-        .iter()
+    rows.iter()
         .map(|row| row.iter().map(|cell| cell.len()).collect())
         .fold(
             std::iter::repeat(0)
-                .take(app.table.rows[0].len())
+                .take(rows[0].len())
                 .collect::<Vec<usize>>(),
             |acc: Vec<usize>, curr: Vec<usize>| {
                 acc.into_iter()
@@ -100,12 +100,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|row| row.iter().map(|cell| cell.as_str()).collect())
         .collect::<Vec<Vec<&str>>>();
 
-    let mut terminal = prepare_terminal()?;
-
     let events = Events::new();
 
     let mut app = App::new(raw_rows_as_strs);
     app.table.next();
+
+    let mut terminal = prepare_terminal()?;
 
     // Input
     loop {
@@ -123,7 +123,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Row::new(cells).height(1)
             });
 
-            let widths = get_column_widths(&app);
+            let widths = get_column_widths(&app.table.rows);
 
             let t = Table::new(rows)
                 // .block(Block::default().borders(Borders::ALL).title("Table"))
