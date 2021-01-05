@@ -47,7 +47,8 @@ fn get_column_indices(text: &String) -> Vec<usize> {
 
   let spaces_iter = first_line
     .char_indices()
-    .filter(|(_index, char)| *char == ' ')
+    // ignoring index 0 for the sake of something like git status --short with a single line i.e. ` M myfile.txt`.
+    .filter(|&(index, char)| index != 0 && char == ' ')
     .map(|(index, _char)| index);
 
   let mut spaces_set: HashSet<usize> = HashSet::from_iter(spaces_iter);
@@ -195,6 +196,19 @@ mod tests {
           cells: vec![String::from("??"), String::from("src/parse/"),],
         },
       ],
+    )
+  }
+
+  #[test]
+  fn test_parse_git_status_one_line() {
+    let text = " M src/main.rs\n";
+
+    assert_eq!(
+      parse(String::from(text)),
+      vec![Row {
+        original_line: String::from(" M src/main.rs"),
+        cells: vec![String::from(" M"), String::from("src/main.rs"),],
+      },],
     )
   }
 
