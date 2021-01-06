@@ -1,17 +1,31 @@
+use crate::args::Args;
+use crate::config::Config;
 #[allow(dead_code)]
+use crate::config::Profile;
 use crate::parse::Row;
 use crate::util::stateful_table::StatefulTable;
 
-pub struct App {
+pub struct App<'a> {
   pub rows: Vec<Row>,
   pub table: StatefulTable,
+  pub config: &'a Config,
+  pub profile: Option<&'a Profile>,
+  pub args: Args,
 }
 
-impl App {
-  pub fn new(rows: Vec<Row>) -> App {
+impl<'a> App<'a> {
+  pub fn new(config: &'a Config, args: Args) -> App<'a> {
+    let profile = config
+      .profiles
+      .iter()
+      .find(|p| p.registered_commands.iter().any(|c| *c == args.command));
+
     App {
-      table: StatefulTable::new(rows.len()),
-      rows: rows,
+      table: StatefulTable::new(0),
+      rows: vec![],
+      config,
+      profile,
+      args,
     }
   }
 

@@ -4,12 +4,13 @@ mod args;
 mod config;
 mod parse;
 mod template;
+mod ui;
 mod util;
 
 use app::App;
 use args::Args;
 use config::{Config, Profile};
-use std::cmp;
+
 use std::io::Read;
 use std::{error::Error, io};
 use termion::{
@@ -24,6 +25,40 @@ use tui::{
     Terminal,
 };
 use util::command;
+
+// crossterm stuff
+
+// use crate::demo::{ui, App};
+// use argh::FromArgs;
+// use crossterm::{
+//     event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode},
+//     execute,
+//     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+// };
+// use std::{
+//     error::Error,
+//     io::stdout,
+//     sync::mpsc,
+//     thread,
+//     time::{Duration, Instant},
+// };
+// use tui::{backend::CrosstermBackend, Terminal};
+
+// enum Event<I> {
+//     Input(I),
+//     Tick,
+// }
+
+// /// Crossterm demo
+// #[derive(Debug, FromArgs)]
+// struct Cli {
+//     /// time in ms between two ticks.
+//     #[argh(option, default = "250")]
+//     tick_rate: u64,
+//     /// whether unicode symbols are used to improve the overall look of the app
+//     #[argh(option, default = "true")]
+//     enhanced_graphics: bool,
+// }
 
 fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
     let output = command::run_command(command).unwrap();
@@ -55,79 +90,97 @@ fn prepare_terminal() -> Result<
     Terminal::new(backend)
 }
 
-fn get_column_widths(rows: &Vec<parse::Row>) -> std::vec::Vec<tui::layout::Constraint> {
-    if rows.len() == 0 {
-        return vec![];
-    }
+// fn main() -> Result<(), Box<dyn Error>> {
+//     let cli: Cli = argh::from_env();
 
-    rows.iter()
-        .map(|row| row.cells.iter().map(|cell| cell.len()).collect())
-        .fold(
-            std::iter::repeat(0)
-                .take(rows[0].cells.len())
-                .collect::<Vec<usize>>(),
-            |acc: Vec<usize>, curr: Vec<usize>| {
-                acc.into_iter()
-                    .zip(curr.into_iter())
-                    .map(|(a, b)| cmp::max(a, b))
-                    .collect()
-            },
-        )
-        .into_iter()
-        .map(|width| Constraint::Length(width as u16))
-        .collect::<Vec<Constraint>>()
-}
+//     enable_raw_mode()?;
 
-fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
-    default_keybindings()
-        .into_iter()
-        .chain(match profile {
-            Some(profile) => match profile.key_bindings.len() {
-                0 => vec![String::from("No keybindings set")],
-                _ => profile
-                    .key_bindings
-                    .iter()
-                    .map(|kb| {
-                        format!(
-                            "{}: {}",
-                            kb.key,
-                            template::resolve_command(&kb, &app.get_selected_row())
-                        )
-                    })
-                    .collect::<Vec<String>>(),
-            },
-            None => vec![String::from("No profile selected")],
-        })
-        .collect::<Vec<String>>()
-        .join("\n")
-}
+//     let mut stdout = stdout();
+//     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
 
-fn default_keybindings() -> Vec<String> {
-    vec![String::from("▲/▼/j/k: up/down"), String::from("q: quit")]
-}
+//     let backend = CrosstermBackend::new(stdout);
+
+//     let mut terminal = Terminal::new(backend)?;
+
+//     // Setup input handling
+//     let (tx, rx) = mpsc::channel();
+
+//     let tick_rate = Duration::from_millis(cli.tick_rate);
+//     thread::spawn(move || {
+//         let mut last_tick = Instant::now();
+//         loop {
+//             // poll for tick rate duration, if no events, sent tick event.
+//             let timeout = tick_rate
+//                 .checked_sub(last_tick.elapsed())
+//                 .unwrap_or_else(|| Duration::from_secs(0));
+//             if event::poll(timeout).unwrap() {
+//                 if let CEvent::Key(key) = event::read().unwrap() {
+//                     tx.send(Event::Input(key)).unwrap();
+//                 }
+//             }
+//             if last_tick.elapsed() >= tick_rate {
+//                 tx.send(Event::Tick).unwrap();
+//                 last_tick = Instant::now();
+//             }
+//         }
+//     });
+
+//     let mut app = App::new("Crossterm Demo", cli.enhanced_graphics);
+
+//     terminal.clear()?;
+
+//     loop {
+//         terminal.draw(|f| ui::draw(f, &mut app))?;
+//         match rx.recv()? {
+//             Event::Input(event) => match event.code {
+//                 KeyCode::Char('q') => {
+//                     disable_raw_mode()?;
+//                     execute!(
+//                         terminal.backend_mut(),
+//                         LeaveAlternateScreen,
+//                         DisableMouseCapture
+//                     )?;
+//                     terminal.show_cursor()?;
+//                     break;
+//                 }
+//                 KeyCode::Char(c) => app.on_key(c),
+//                 KeyCode::Left => app.on_left(),
+//                 KeyCode::Up => app.on_up(),
+//                 KeyCode::Right => app.on_right(),
+//                 KeyCode::Down => app.on_down(),
+//                 _ => {}
+//             },
+//             Event::Tick => {
+//                 app.on_tick();
+//             }
+//         }
+//         if app.should_quit {
+//             break;
+//         }
+//     }
+
+//     Ok(())
+// }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::new();
-
     let config = Config::new();
-    let profile = config
-        .profiles
-        .iter()
-        .find(|p| p.registered_commands.iter().any(|c| *c == args.command));
 
-    let lines_to_skip = match args.lines_to_skip {
-        0 => match profile {
+    let mut app = App::new(&config, args);
+    app.table.next();
+
+    let lines_to_skip = match app.args.lines_to_skip {
+        0 => match app.profile {
             Some(profile) => profile.lines_to_skip,
             None => 0,
         },
-        _ => args.lines_to_skip,
+        _ => app.args.lines_to_skip,
     };
 
     // maintain a rows array here and derive raw_rows on each loop? That way we can use selected_index and get the original row itself.
-    let mut original_rows = get_rows_from_command(&args.command, lines_to_skip);
+    let mut original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
 
-    let mut app = App::new(original_rows);
-    app.table.next();
+    app.update_rows(original_rows);
 
     let mut terminal = prepare_terminal()?;
 
@@ -135,61 +188,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     // This provides non-blocking input support.
     let mut asi = async_stdin();
 
-    let selected_style = Style::default()
-        .bg(Color::Blue)
-        .add_modifier(Modifier::BOLD);
-
     // Input
     loop {
-        terminal.draw(|f| {
-            // need to get bindings for this profile
-            let formatted_bindings = display_keybindings(profile, &app);
-
-            let formatted_keybindings_length = (formatted_bindings.lines().count() + 1) as u16;
-
-            let rects = Layout::default()
-                .constraints(
-                    [
-                        Constraint::Length(f.size().height - formatted_keybindings_length - 1),
-                        Constraint::Length(formatted_keybindings_length),
-                        Constraint::Length(1),
-                    ]
-                    .as_ref(),
-                )
-                .split(f.size());
-
-            let rows = app.rows.iter().map(|row| {
-                let cells = row.cells.iter().map(|c| Cell::from(c.clone()));
-                Row::new(cells).height(1)
-            });
-
-            let widths = get_column_widths(&app.rows);
-
-            let table = Table::new(rows)
-                .highlight_style(selected_style)
-                .highlight_symbol("> ")
-                .widths(&widths)
-                .column_spacing(2);
-
-            f.render_stateful_widget(table, rects[0], &mut app.table.state);
-
-            let keybindings_list = Paragraph::new(formatted_bindings)
-                .block(Block::default().title(match profile {
-                    Some(profile) => format!("Keybindings for profile '{}':", profile.name),
-                    None => String::from("Keybindings:"),
-                }))
-                .style(Style::default().fg(Color::Reset))
-                .wrap(Wrap { trim: true });
-
-            f.render_widget(keybindings_list, rects[1]);
-
-            let status_bar = Paragraph::new("Loading...").style(Style::default().fg(Color::Cyan));
-
-            f.render_widget(status_bar, rects[2]);
-        })?;
+        terminal.draw(|f| ui::draw(f, &mut app))?;
 
         // Iterate over all the keys that have been pressed since the
         // last time we checked.
+        // need to wait for event
         for k in asi.by_ref().keys() {
             match k.unwrap() {
                 Key::Char('q') => {
@@ -203,8 +208,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                     app.table.previous();
                 }
                 Key::Char(c) => {
-                    if profile.is_some() {
-                        let binding = profile.unwrap().key_bindings.iter().find(|&kb| kb.key == c);
+                    if app.profile.is_some() {
+                        let binding = app
+                            .profile
+                            .unwrap()
+                            .key_bindings
+                            .iter()
+                            .find(|&kb| kb.key == c);
                         if binding.is_some() {
                             let command = template::resolve_command(
                                 &binding.unwrap(),
@@ -212,7 +222,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             );
                             command::run_command(&command)?;
                             // need to set the app state here, then run the command asynchronously and once it's done, update the app.
-                            original_rows = get_rows_from_command(&args.command, lines_to_skip);
+                            original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
                             app.update_rows(original_rows);
                         }
                     }
