@@ -153,16 +153,24 @@ fn default_keybindings() -> Vec<String> {
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::new();
 
-    // maintain a rows array here and derive raw_rows on each loop? That way we can use selected_index and get the original row itself.
-    let mut original_rows = get_rows_from_command(&args.command, args.lines_to_skip);
-
-    let events = Events::new();
-
     let config = Config::new();
     let profile = config
         .profiles
         .iter()
         .find(|p| p.registered_commands.iter().any(|c| *c == args.command));
+
+    let lines_to_skip = match args.lines_to_skip {
+        0 => match profile {
+            Some(profile) => profile.lines_to_skip,
+            None => 0,
+        },
+        _ => args.lines_to_skip,
+    };
+
+    // maintain a rows array here and derive raw_rows on each loop? That way we can use selected_index and get the original row itself.
+    let mut original_rows = get_rows_from_command(&args.command, lines_to_skip);
+
+    let events = Events::new();
 
     let mut app = App::new(original_rows);
     app.table.next();
@@ -238,8 +246,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 &app.get_selected_row(),
                             );
                             let output = command::run_command(&command).unwrap();
-                            original_rows =
-                                get_rows_from_command(&args.command, args.lines_to_skip);
+                            original_rows = get_rows_from_command(&args.command, lines_to_skip);
                             app.update_rows(original_rows);
                         }
                     }

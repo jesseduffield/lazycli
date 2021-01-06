@@ -41,7 +41,11 @@ impl Config {
       profiles: vec![
         Profile {
           name: String::from("ls"),
-          registered_commands: vec![String::from("ls -1"), String::from("ls -a")],
+          registered_commands: vec![
+            String::from("ls -1"),
+            String::from("ls -a"),
+            String::from("ls"),
+          ],
           key_bindings: vec![
             KeyBinding {
               key: 'd',
@@ -83,7 +87,7 @@ impl Config {
               ..Default::default()
             },
           ],
-          lines_to_skip: 0,
+          lines_to_skip: 1,
         },
         Profile {
           name: String::from("git status --short"),
