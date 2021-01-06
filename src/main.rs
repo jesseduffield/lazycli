@@ -65,12 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     app.update_rows(original_rows);
 
-    enable_raw_mode()?;
-
-    let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal_manager = TerminalManager::new()?;
 
     // Setup input handling
     let (tx, rx) = mpsc::channel();
@@ -95,20 +90,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    terminal.clear()?;
+    terminal_manager.terminal.clear()?;
 
     loop {
-        terminal.draw(|f| ui::draw(f, &mut app))?;
+        terminal_manager.terminal.draw(|f| ui::draw(f, &mut app))?;
         match rx.recv()? {
             Event::Input(event) => match event.code {
                 KeyCode::Char('q') => {
-                    disable_raw_mode()?;
-                    execute!(
-                        terminal.backend_mut(),
-                        LeaveAlternateScreen,
-                        DisableMouseCapture
-                    )?;
-                    terminal.show_cursor()?;
+                    terminal_manager.teardown()?;
                     break;
                 }
                 KeyCode::Down | KeyCode::Char('k') => {
@@ -125,6 +114,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             .key_bindings
                             .iter()
                             .find(|&kb| kb.key == c);
+
                         if binding.is_some() {
                             let command = template::resolve_command(
                                 &binding.unwrap(),
@@ -149,4 +139,31 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+struct TerminalManager {
+    terminal: tui::Terminal<tui::backend::CrosstermBackend<std::io::Stdout>>,
+}
+
+impl TerminalManager {
+    fn new() -> Result<TerminalManager, Box<dyn Error>> {
+        enable_raw_mode()?;
+        let mut stdout = stdout();
+        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+        let backend = CrosstermBackend::new(stdout);
+        Ok(TerminalManager {
+            terminal: Terminal::new(backend)?,
+        })
+    }
+
+    fn teardown(&mut self) -> Result<(), Box<dyn Error>> {
+        disable_raw_mode()?;
+        execute!(
+            self.terminal.backend_mut(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        )?;
+        // TODO: understand why this works
+        Ok(self.terminal.show_cursor()?)
+    }
 }
