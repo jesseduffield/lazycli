@@ -116,26 +116,33 @@ fn get_selected_row<'a>(app: &'a App) -> Vec<&'a str> {
 }
 
 fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
-    match profile {
-        Some(profile) => match profile.key_bindings.len() {
-            0 => String::from("No keybindings set"),
-            _ => profile
-                .key_bindings
-                .iter()
-                .map(|kb| {
-                    let selected_row = get_selected_row(&app);
+    default_keybindings()
+        .into_iter()
+        .chain(match profile {
+            Some(profile) => match profile.key_bindings.len() {
+                0 => vec![String::from("No keybindings set")],
+                _ => profile
+                    .key_bindings
+                    .iter()
+                    .map(|kb| {
+                        let selected_row = get_selected_row(&app);
 
-                    format!(
-                        "{}: `{}`",
-                        kb.key,
-                        template::template_replace(&kb.command, &selected_row)
-                    )
-                })
-                .collect::<Vec<String>>()
-                .join("\n"),
-        },
-        None => String::from("No profile selected"),
-    }
+                        format!(
+                            "{}: `{}`",
+                            kb.key,
+                            template::template_replace(&kb.command, &selected_row)
+                        )
+                    })
+                    .collect::<Vec<String>>(),
+            },
+            None => vec![String::from("No profile selected")],
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
+fn default_keybindings() -> Vec<String> {
+    vec![String::from("▲/▼/j/k: up/down"), String::from("q: quit")]
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -210,10 +217,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 Key::Char('q') => {
                     break;
                 }
-                Key::Down => {
+                Key::Down | Key::Char('k') => {
                     app.table.next();
                 }
-                Key::Up => {
+                Key::Up | Key::Char('j') => {
                     app.table.previous();
                 }
                 Key::Char(c) => {
