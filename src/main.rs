@@ -112,16 +112,6 @@ fn load_rows(rows: Vec<parse::Row>) -> std::vec::Vec<std::vec::Vec<String>> {
         .collect::<Vec<Vec<String>>>()
 }
 
-// fn get_selected_row<'a>(app: &'a App) -> Row {
-//     let selected_index = app.table.state.selected().unwrap();
-
-//     app.rows[selected_index]
-//         .cells
-//         .iter()
-//         .map(AsRef::as_ref)
-//         .collect::<Vec<&str>>()
-// }
-
 fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
     default_keybindings()
         .into_iter()
