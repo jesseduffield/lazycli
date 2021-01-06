@@ -16,7 +16,10 @@ pub fn resolve_command(keybinding: &KeyBinding, row: &Row) -> String {
         None => vec![],
         Some(captures) => captures
           .iter()
-          .map(|capture| capture.unwrap().as_str())
+          .map(|capture| match capture {
+            Some(capture) => capture.as_str(),
+            None => "",
+          })
           .collect::<Vec<&str>>(),
       }
     }
