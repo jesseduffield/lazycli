@@ -10,6 +10,7 @@ mod util;
 use app::App;
 use args::Args;
 use config::Config;
+use parse::Row;
 
 use std::error::Error;
 
@@ -32,9 +33,10 @@ enum Event<I> {
     Input(I),
     Tick,
     CommandFinished,
+    RowsLoaded(Vec<Row>),
 }
 
-fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
+fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<Row> {
     let output = command::run_command(command).unwrap();
 
     let trimmed_output = output
@@ -161,7 +163,6 @@ fn handle_event(
                         app.status_text = format!("Running command: {}", command);
 
                         let tx_clone = tx.clone();
-
                         thread::spawn(move || {
                             // TODO: don't just unwrap here
                             command::run_command(&command).unwrap();
@@ -177,9 +178,18 @@ fn handle_event(
             app.on_tick();
         }
         Event::CommandFinished => {
-            // need to set the app state here, then run the command asynchronously and once it's done, update the app.
-            let original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
-            app.update_rows(original_rows);
+            let command = app.args.command.clone();
+            app.status_text = format!("Running command: {}", command);
+
+            let tx_clone = tx.clone();
+            thread::spawn(move || {
+                let rows = get_rows_from_command(&command, lines_to_skip);
+
+                tx_clone.send(Event::RowsLoaded(rows)).unwrap()
+            });
+        }
+        Event::RowsLoaded(rows) => {
+            app.update_rows(rows);
 
             app.status_text = String::from("");
         }
