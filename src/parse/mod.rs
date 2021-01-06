@@ -14,6 +14,10 @@ impl Row {
       cells,
     }
   }
+
+  pub fn cells_as_strs(&self) -> Vec<&str> {
+    self.cells.iter().map(|c| c.as_ref()).collect()
+  }
 }
 
 pub fn parse(text: String) -> Vec<Row> {

@@ -22,19 +22,28 @@ use util::command;
 use util::stateful_table::StatefulTable;
 
 struct App {
+    rows: Vec<parse::Row>,
     table: StatefulTable,
 }
 
 impl App {
-    fn new(rows: Vec<Vec<String>>) -> App {
+    fn new(rows: Vec<parse::Row>) -> App {
         App {
-            table: StatefulTable::new(rows),
+            table: StatefulTable::new(rows.len()),
+            rows: rows,
         }
     }
 
-    fn update_rows(&mut self, rows: Vec<Vec<String>>) {
+    fn get_selected_row(&self) -> &parse::Row {
+        let selected_index = self.table.state.selected().unwrap();
+
+        &self.rows[selected_index]
+    }
+
+    fn update_rows(&mut self, rows: Vec<parse::Row>) {
         let length = rows.len();
-        self.table.rows = rows;
+        self.table.row_count = length;
+        self.rows = rows;
         // if our cursor is too far we need to correct it
         if length == 0 {
             self.table.state.select(Some(0));
@@ -74,18 +83,16 @@ fn prepare_terminal() -> Result<
     Terminal::new(backend)
 }
 
-fn get_column_widths(
-    rows: &std::vec::Vec<std::vec::Vec<String>>,
-) -> std::vec::Vec<tui::layout::Constraint> {
+fn get_column_widths(rows: &Vec<parse::Row>) -> std::vec::Vec<tui::layout::Constraint> {
     if rows.len() == 0 {
         return vec![];
     }
 
     rows.iter()
-        .map(|row| row.iter().map(|cell| cell.len()).collect())
+        .map(|row| row.cells.iter().map(|cell| cell.len()).collect())
         .fold(
             std::iter::repeat(0)
-                .take(rows[0].len())
+                .take(rows[0].cells.len())
                 .collect::<Vec<usize>>(),
             |acc: Vec<usize>, curr: Vec<usize>| {
                 acc.into_iter()
@@ -99,21 +106,21 @@ fn get_column_widths(
         .collect::<Vec<Constraint>>()
 }
 
-fn load_rows(args: &Args) -> std::vec::Vec<std::vec::Vec<String>> {
-    get_rows_from_command(&args.command, args.lines_to_skip)
-        .into_iter()
+fn load_rows(rows: Vec<parse::Row>) -> std::vec::Vec<std::vec::Vec<String>> {
+    rows.into_iter()
         .map(|row| row.cells.iter().map(|cell| cell.to_owned()).collect())
         .collect::<Vec<Vec<String>>>()
 }
 
-fn get_selected_row<'a>(app: &'a App) -> Vec<&'a str> {
-    let selected_index = app.table.state.selected().unwrap();
+// fn get_selected_row<'a>(app: &'a App) -> Row {
+//     let selected_index = app.table.state.selected().unwrap();
 
-    app.table.rows[selected_index]
-        .iter()
-        .map(AsRef::as_ref)
-        .collect::<Vec<&str>>()
-}
+//     app.rows[selected_index]
+//         .cells
+//         .iter()
+//         .map(AsRef::as_ref)
+//         .collect::<Vec<&str>>()
+// }
 
 fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
     default_keybindings()
@@ -125,12 +132,10 @@ fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
                     .key_bindings
                     .iter()
                     .map(|kb| {
-                        let selected_row = get_selected_row(&app);
-
                         format!(
                             "{}: `{}`",
                             kb.key,
-                            template::template_replace(&kb.command, &selected_row)
+                            template::resolve_command(&kb, &app.get_selected_row())
                         )
                     })
                     .collect::<Vec<String>>(),
@@ -148,7 +153,8 @@ fn default_keybindings() -> Vec<String> {
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::new();
 
-    let mut raw_rows = load_rows(&args);
+    // maintain a rows array here and derive raw_rows on each loop? That way we can use selected_index and get the original row itself.
+    let mut original_rows = get_rows_from_command(&args.command, args.lines_to_skip);
 
     let events = Events::new();
 
@@ -158,7 +164,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .iter()
         .find(|p| p.registered_commands.iter().any(|c| *c == args.command));
 
-    let mut app = App::new(raw_rows);
+    let mut app = App::new(original_rows);
     app.table.next();
 
     let mut terminal = prepare_terminal()?;
@@ -185,12 +191,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 )
                 .split(f.size());
 
-            let rows = app.table.rows.iter().map(|item| {
-                let cells = item.iter().map(|c| Cell::from(c.clone()));
+            let rows = app.rows.iter().map(|row| {
+                let cells = row.cells.iter().map(|c| Cell::from(c.clone()));
                 Row::new(cells).height(1)
             });
 
-            let widths = get_column_widths(&app.table.rows);
+            let widths = get_column_widths(&app.rows);
 
             let table = Table::new(rows)
                 // .block(Block::default().borders(Borders::ALL).title("Table"))
@@ -227,16 +233,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                     if profile.is_some() {
                         let binding = profile.unwrap().key_bindings.iter().find(|&kb| kb.key == c);
                         if binding.is_some() {
-                            let selected_index = app.table.state.selected().unwrap();
-                            let selected_row = get_selected_row(&app);
-
-                            let command_template = &binding.unwrap().command;
-                            let command =
-                                template::template_replace(command_template, &selected_row);
+                            let command = template::resolve_command(
+                                &binding.unwrap(),
+                                &app.get_selected_row(),
+                            );
                             let output = command::run_command(&command).unwrap();
-                            raw_rows = load_rows(&args);
-                            app.update_rows(raw_rows);
-                            // now I need to do something with that row.
+                            original_rows =
+                                get_rows_from_command(&args.command, args.lines_to_skip);
+                            app.update_rows(original_rows);
                         }
                     }
                 }

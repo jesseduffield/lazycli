@@ -122,7 +122,7 @@ impl Config {
               key: 'a',
               command: String::from("git reset $1"),
               confirm: true,
-              regex: Some(String::from(".*:\\s+(\\w+)")),
+              regex: Some(String::from(".*:\\s+([^\\s]+)")),
               ..Default::default()
             },
             KeyBinding {

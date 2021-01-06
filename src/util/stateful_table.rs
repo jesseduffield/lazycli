@@ -2,21 +2,21 @@ use tui::widgets::TableState;
 
 pub struct StatefulTable {
   pub state: TableState,
-  pub rows: Vec<Vec<String>>,
+  pub row_count: usize,
 }
 
 impl StatefulTable {
-  pub fn new(rows: Vec<Vec<String>>) -> StatefulTable {
+  pub fn new(row_count: usize) -> StatefulTable {
     StatefulTable {
       state: TableState::default(),
-      rows,
+      row_count,
     }
   }
 
   pub fn next(&mut self) {
     let i = match self.state.selected() {
       Some(i) => {
-        if i >= self.rows.len() - 1 {
+        if i >= self.row_count - 1 {
           i
         } else {
           i + 1
