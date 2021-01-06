@@ -118,25 +118,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                             .find(|&kb| kb.key == c);
 
                         if binding.is_some() {
-                            app.is_loading = true;
-
                             let command = template::resolve_command(
                                 &binding.unwrap(),
                                 app.get_selected_row(),
                             );
+
+                            app.status_text = format!("Running command: {}", command);
 
                             let tx_clone = tx.clone();
 
                             thread::spawn(move || {
                                 // TODO: don't just unwrap here
                                 command::run_command(&command).unwrap();
-
-                                // // need to set the app state here, then run the command asynchronously and once it's done, update the app.
-                                // let original_rows =
-                                //     get_rows_from_command(&app.args.command, lines_to_skip);
-                                // app.update_rows(original_rows);
-
-                                // app.is_loading = false;
 
                                 tx_clone.send(Event::CommandFinished).unwrap()
                             });
@@ -148,7 +141,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             Event::Tick => {
                 app.on_tick();
             }
-            Event::CommandFinished => (),
+            Event::CommandFinished => {
+                // need to set the app state here, then run the command asynchronously and once it's done, update the app.
+                let original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
+                app.update_rows(original_rows);
+
+                app.status_text = String::from("");
+            }
         }
         if app.should_quit {
             break;

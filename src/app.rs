@@ -12,7 +12,7 @@ pub struct App<'a> {
   pub profile: Option<&'a Profile>,
   pub args: Args,
   pub should_quit: bool,
-  pub is_loading: bool,
+  pub status_text: String,
 }
 
 impl<'a> App<'a> {
@@ -29,7 +29,7 @@ impl<'a> App<'a> {
       profile,
       args,
       should_quit: false,
-      is_loading: false,
+      status_text: String::from(""),
     }
   }
 

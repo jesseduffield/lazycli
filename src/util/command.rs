@@ -4,6 +4,8 @@ use std::process::Command;
 pub fn run_command(command: &str) -> io::Result<String> {
   let output = Command::new("sh").args(&["-c", command]).output()?;
 
+  // TODO: handle error here with stderr.
+
   Ok(String::from_utf8(output.stdout).unwrap())
 }
 
