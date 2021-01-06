@@ -123,7 +123,7 @@ fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
                     .iter()
                     .map(|kb| {
                         format!(
-                            "{}: `{}`",
+                            "{}: {}",
                             kb.key,
                             template::resolve_command(&kb, &app.get_selected_row())
                         )
