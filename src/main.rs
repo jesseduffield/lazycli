@@ -96,61 +96,92 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     loop {
         terminal_manager.terminal.draw(|f| ui::draw(f, &mut app))?;
-        match rx.recv()? {
-            Event::Input(event) => match event.code {
-                KeyCode::Char('q') => {
-                    terminal_manager.teardown()?;
-                    break;
-                }
-                KeyCode::Down | KeyCode::Char('k') => {
-                    app.table.next();
-                }
-                KeyCode::Up | KeyCode::Char('j') => {
-                    app.table.previous();
-                }
-                KeyCode::Char(c) => {
-                    if app.profile.is_some() {
-                        let binding = app
-                            .profile
-                            .unwrap()
-                            .key_bindings
-                            .iter()
-                            .find(|&kb| kb.key == c);
 
-                        if binding.is_some() {
-                            let command = template::resolve_command(
-                                &binding.unwrap(),
-                                app.get_selected_row(),
-                            );
-
-                            app.status_text = format!("Running command: {}", command);
-
-                            let tx_clone = tx.clone();
-
-                            thread::spawn(move || {
-                                // TODO: don't just unwrap here
-                                command::run_command(&command).unwrap();
-
-                                tx_clone.send(Event::CommandFinished).unwrap()
-                            });
-                        }
-                    }
-                }
-                _ => (),
-            },
-            Event::Tick => {
-                app.on_tick();
-            }
-            Event::CommandFinished => {
-                // need to set the app state here, then run the command asynchronously and once it's done, update the app.
-                let original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
-                app.update_rows(original_rows);
-
-                app.status_text = String::from("");
-            }
-        }
+        // You might be wondering, what's going on here? As it so happens, we're blocking until the first event is received, and then processing any other events in the buffer before continuing. If we only handle one event per iteration of the loop, that's a lot of unnecessary drawing. On the other hand, if we don't block on any events, we'll end up drawing constantly while waiting for the next event to be received, causing CPU to go through the roof.
+        handle_event(
+            rx.recv()?,
+            &mut app,
+            &mut terminal_manager,
+            &tx,
+            lines_to_skip,
+        )?;
         if app.should_quit {
             break;
+        }
+
+        for backlogged_event in rx.try_iter() {
+            handle_event(
+                backlogged_event,
+                &mut app,
+                &mut terminal_manager,
+                &tx,
+                lines_to_skip,
+            )?;
+            if app.should_quit {
+                break;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn handle_event(
+    event: Event<crossterm::event::KeyEvent>,
+    app: &mut App,
+    terminal_manager: &mut TerminalManager,
+    tx: &std::sync::mpsc::Sender<Event<crossterm::event::KeyEvent>>,
+    lines_to_skip: usize,
+) -> Result<(), Box<dyn Error>> {
+    match event {
+        Event::Input(event) => match event.code {
+            KeyCode::Char('q') => {
+                terminal_manager.teardown()?;
+                app.should_quit = true;
+            }
+            KeyCode::Down | KeyCode::Char('k') => {
+                app.table.next();
+            }
+            KeyCode::Up | KeyCode::Char('j') => {
+                app.table.previous();
+            }
+            KeyCode::Char(c) => {
+                if app.profile.is_some() {
+                    let binding = app
+                        .profile
+                        .unwrap()
+                        .key_bindings
+                        .iter()
+                        .find(|&kb| kb.key == c);
+
+                    if binding.is_some() {
+                        let command =
+                            template::resolve_command(&binding.unwrap(), app.get_selected_row());
+
+                        app.status_text = format!("Running command: {}", command);
+
+                        let tx_clone = tx.clone();
+
+                        thread::spawn(move || {
+                            // TODO: don't just unwrap here
+                            command::run_command(&command).unwrap();
+
+                            tx_clone.send(Event::CommandFinished).unwrap()
+                        });
+                    }
+                }
+            }
+            _ => (),
+        },
+        Event::Tick => {
+            app.on_tick();
+        }
+        Event::CommandFinished => {
+            // need to set the app state here, then run the command asynchronously and once it's done, update the app.
+            let original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
+            app.update_rows(original_rows);
+
+            app.status_text = String::from("");
         }
     }
 
