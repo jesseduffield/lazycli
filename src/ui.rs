@@ -3,6 +3,7 @@ use crate::config::Profile;
 use crate::parse;
 use crate::template;
 use std::cmp;
+use std::time::SystemTime;
 use tui::{
   backend::Backend,
   layout::{Constraint, Layout},
@@ -10,6 +11,19 @@ use tui::{
   widgets::{Block, Cell, Paragraph, Row, Table, Wrap},
   Frame,
 };
+
+fn spinner_frame() -> String {
+  // need current time
+  let now = SystemTime::now()
+    .duration_since(SystemTime::UNIX_EPOCH)
+    .unwrap()
+    .as_millis()
+    / 100;
+
+  let chars = vec!['⣾', '⣷', '⣯', '⣟', '⡿', '⢿', '⣻', '⣽'];
+  let index = (now as usize) % (chars.len() - 1);
+  chars[index].to_string()
+}
 
 pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
   let selected_style = Style::default()
@@ -58,7 +72,12 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
   f.render_widget(keybindings_list, rects[2]);
 
-  let status_bar = Paragraph::new(app.status_text.as_ref()).style(Style::default().fg(Color::Cyan));
+  let status_text = match app.status_text.as_ref() {
+    "" => String::from(""),
+    _ => format!("{} {}", spinner_frame(), app.status_text),
+  };
+
+  let status_bar = Paragraph::new(status_text).style(Style::default().fg(Color::Cyan));
 
   f.render_widget(status_bar, rects[3]);
 }
