@@ -24,7 +24,8 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
   let rects = Layout::default()
     .constraints(
       [
-        Constraint::Length(f.size().height - formatted_keybindings_length - 1),
+        Constraint::Length(f.size().height - formatted_keybindings_length - 2),
+        Constraint::Length(1),
         Constraint::Length(formatted_keybindings_length),
         Constraint::Length(1),
       ]
@@ -55,11 +56,11 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     .style(Style::default().fg(Color::Reset))
     .wrap(Wrap { trim: true });
 
-  f.render_widget(keybindings_list, rects[1]);
+  f.render_widget(keybindings_list, rects[2]);
 
   let status_bar = Paragraph::new(app.status_text.as_ref()).style(Style::default().fg(Color::Cyan));
 
-  f.render_widget(status_bar, rects[2]);
+  f.render_widget(status_bar, rects[3]);
 }
 
 fn get_column_widths(rows: &Vec<parse::Row>) -> std::vec::Vec<tui::layout::Constraint> {
