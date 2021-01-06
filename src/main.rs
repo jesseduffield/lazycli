@@ -1,4 +1,5 @@
 #[allow(dead_code)]
+mod app;
 mod args;
 mod config;
 mod parse;
@@ -6,6 +7,7 @@ mod template;
 mod util;
 
 use crate::util::event::{Event, Events};
+use app::App;
 use args::Args;
 use config::{Config, Profile};
 use std::cmp;
@@ -20,38 +22,6 @@ use tui::{
 };
 use util::command;
 use util::stateful_table::StatefulTable;
-
-struct App {
-    rows: Vec<parse::Row>,
-    table: StatefulTable,
-}
-
-impl App {
-    fn new(rows: Vec<parse::Row>) -> App {
-        App {
-            table: StatefulTable::new(rows.len()),
-            rows: rows,
-        }
-    }
-
-    fn get_selected_row(&self) -> &parse::Row {
-        let selected_index = self.table.state.selected().unwrap();
-
-        &self.rows[selected_index]
-    }
-
-    fn update_rows(&mut self, rows: Vec<parse::Row>) {
-        let length = rows.len();
-        self.table.row_count = length;
-        self.rows = rows;
-        // if our cursor is too far we need to correct it
-        if length == 0 {
-            self.table.state.select(Some(0));
-        } else if self.table.state.selected().unwrap() > length - 1 {
-            self.table.state.select(Some(length - 1));
-        }
-    }
-}
 
 fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
     let output = command::run_command(command).unwrap();
@@ -191,7 +161,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             let widths = get_column_widths(&app.rows);
 
             let table = Table::new(rows)
-                // .block(Block::default().borders(Borders::ALL).title("Table"))
                 .highlight_style(selected_style)
                 .highlight_symbol("> ")
                 .widths(&widths)
