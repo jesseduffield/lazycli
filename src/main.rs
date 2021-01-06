@@ -75,7 +75,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Setup input handling
     let (tx, rx) = mpsc::channel();
 
-    let tick_rate = Duration::from_millis(80); // TODO: consider changing value
+    let tick_rate = Duration::from_millis(1000); // TODO: consider changing value
     thread::spawn(move || {
         let mut last_tick = Instant::now();
         loop {
