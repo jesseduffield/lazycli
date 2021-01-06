@@ -145,8 +145,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             let rects = Layout::default()
                 .constraints(
                     [
-                        Constraint::Length(f.size().height - formatted_keybindings_length),
+                        Constraint::Length(f.size().height - formatted_keybindings_length - 1),
                         Constraint::Length(formatted_keybindings_length),
+                        Constraint::Length(1),
                     ]
                     .as_ref(),
                 )
@@ -176,6 +177,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .wrap(Wrap { trim: true });
 
             f.render_widget(keybindings_list, rects[1]);
+
+            let status_bar = Paragraph::new("Loading...").style(Style::default().fg(Color::Cyan));
+
+            f.render_widget(status_bar, rects[2]);
         })?;
 
         if let Event::Input(key) = events.next()? {
