@@ -7,7 +7,7 @@ mod util;
 
 use crate::util::event::{Event, Events};
 use args::Args;
-use config::Config;
+use config::{Config, Profile};
 use std::cmp;
 use std::{error::Error, io};
 use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
@@ -15,7 +15,7 @@ use tui::{
     backend::TermionBackend,
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
-    widgets::{Cell, Row, Table},
+    widgets::{Block, Cell, Paragraph, Row, Table, Wrap},
     Terminal,
 };
 use util::command;
@@ -106,6 +106,38 @@ fn load_rows(args: &Args) -> std::vec::Vec<std::vec::Vec<String>> {
         .collect::<Vec<Vec<String>>>()
 }
 
+fn get_selected_row<'a>(app: &'a App) -> Vec<&'a str> {
+    let selected_index = app.table.state.selected().unwrap();
+
+    app.table.rows[selected_index]
+        .iter()
+        .map(AsRef::as_ref)
+        .collect::<Vec<&str>>()
+}
+
+fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
+    match profile {
+        Some(profile) => match profile.key_bindings.len() {
+            0 => String::from("No keybindings set"),
+            _ => profile
+                .key_bindings
+                .iter()
+                .map(|kb| {
+                    let selected_row = get_selected_row(&app);
+
+                    format!(
+                        "{}: `{}`",
+                        kb.key,
+                        template::template_replace(&kb.command, &selected_row)
+                    )
+                })
+                .collect::<Vec<String>>()
+                .join("\n"),
+        },
+        None => String::from("No profile selected"),
+    }
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::new();
 
@@ -124,16 +156,27 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut terminal = prepare_terminal()?;
 
+    let selected_style = Style::default()
+        .bg(Color::Blue)
+        .add_modifier(Modifier::BOLD);
+
     // Input
     loop {
         terminal.draw(|f| {
-            let rects = Layout::default()
-                .constraints([Constraint::Percentage(100)].as_ref())
-                .split(f.size());
+            // need to get bindings for this profile
+            let formatted_bindings = display_keybindings(profile, &app);
 
-            let selected_style = Style::default()
-                .bg(Color::Blue)
-                .add_modifier(Modifier::BOLD);
+            let formatted_keybindings_length = (formatted_bindings.lines().count() + 1) as u16;
+
+            let rects = Layout::default()
+                .constraints(
+                    [
+                        Constraint::Length(f.size().height - formatted_keybindings_length),
+                        Constraint::Length(formatted_keybindings_length),
+                    ]
+                    .as_ref(),
+                )
+                .split(f.size());
 
             let rows = app.table.rows.iter().map(|item| {
                 let cells = item.iter().map(|c| Cell::from(c.clone()));
@@ -142,13 +185,24 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let widths = get_column_widths(&app.table.rows);
 
-            let t = Table::new(rows)
+            let table = Table::new(rows)
                 // .block(Block::default().borders(Borders::ALL).title("Table"))
                 .highlight_style(selected_style)
                 .highlight_symbol("> ")
                 .widths(&widths)
                 .column_spacing(2);
-            f.render_stateful_widget(t, rects[0], &mut app.table.state);
+
+            f.render_stateful_widget(table, rects[0], &mut app.table.state);
+
+            let keybindings_list = Paragraph::new(formatted_bindings)
+                .block(Block::default().title(match profile {
+                    Some(profile) => format!("Keybindings for profile '{}':", profile.name),
+                    None => String::from("Keybindings:"),
+                }))
+                .style(Style::default().fg(Color::Reset))
+                .wrap(Wrap { trim: true });
+
+            f.render_widget(keybindings_list, rects[1]);
         })?;
 
         if let Event::Input(key) = events.next()? {
@@ -167,14 +221,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                         let binding = profile.unwrap().key_bindings.iter().find(|&kb| kb.key == c);
                         if binding.is_some() {
                             let selected_index = app.table.state.selected().unwrap();
-                            let selected_row = &app.table.rows[selected_index]
-                                .iter()
-                                .map(AsRef::as_ref)
-                                .collect::<Vec<&str>>();
+                            let selected_row = get_selected_row(&app);
 
                             let command_template = &binding.unwrap().command;
                             let command =
-                                template::template_replace(command_template, selected_row);
+                                template::template_replace(command_template, &selected_row);
                             let output = command::run_command(&command).unwrap();
                             raw_rows = load_rows(&args);
                             app.update_rows(raw_rows);

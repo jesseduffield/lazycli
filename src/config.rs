@@ -52,12 +52,37 @@ impl Config {
           lines_to_skip: 0,
         },
         Profile {
+          name: String::from("ls -l"),
+          registered_commands: vec![String::from("ls -l")],
+          key_bindings: vec![
+            KeyBinding {
+              key: 'd',
+              command: String::from("rm $8"),
+              confirm: true,
+              after: After::Refresh,
+            },
+            KeyBinding {
+              key: 'o',
+              command: String::from("code -r $8"),
+              confirm: true,
+              after: After::Refresh,
+            },
+            KeyBinding {
+              key: 'u',
+              command: String::from("cd $8"),
+              confirm: true,
+              after: After::Refresh,
+            },
+          ],
+          lines_to_skip: 0,
+        },
+        Profile {
           name: String::from("git status"),
           registered_commands: vec![String::from("git status --short")],
           key_bindings: vec![
             KeyBinding {
               key: 'A',
-              command: String::from("git add $0"),
+              command: String::from("git add $1"),
               confirm: true,
               after: After::Refresh,
             },
