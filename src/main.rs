@@ -106,12 +106,6 @@ fn get_column_widths(rows: &Vec<parse::Row>) -> std::vec::Vec<tui::layout::Const
         .collect::<Vec<Constraint>>()
 }
 
-fn load_rows(rows: Vec<parse::Row>) -> std::vec::Vec<std::vec::Vec<String>> {
-    rows.into_iter()
-        .map(|row| row.cells.iter().map(|cell| cell.to_owned()).collect())
-        .collect::<Vec<Vec<String>>>()
-}
-
 fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
     default_keybindings()
         .into_iter()
