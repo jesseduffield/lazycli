@@ -9,56 +9,29 @@ mod util;
 
 use app::App;
 use args::Args;
-use config::{Config, Profile};
+use config::Config;
 
-use std::io::Read;
-use std::{error::Error, io};
-use termion::{
-    async_stdin, event::Key, input::MouseTerminal, input::TermRead, raw::IntoRawMode,
-    screen::AlternateScreen,
-};
-use tui::{
-    backend::TermionBackend,
-    layout::{Constraint, Layout},
-    style::{Color, Modifier, Style},
-    widgets::{Block, Cell, Paragraph, Row, Table, Wrap},
-    Terminal,
-};
+use std::error::Error;
+
+use tui::{backend::CrosstermBackend, Terminal};
 use util::command;
 
-// crossterm stuff
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use std::{
+    io::stdout,
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
+};
 
-// use crate::demo::{ui, App};
-// use argh::FromArgs;
-// use crossterm::{
-//     event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode},
-//     execute,
-//     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-// };
-// use std::{
-//     error::Error,
-//     io::stdout,
-//     sync::mpsc,
-//     thread,
-//     time::{Duration, Instant},
-// };
-// use tui::{backend::CrosstermBackend, Terminal};
-
-// enum Event<I> {
-//     Input(I),
-//     Tick,
-// }
-
-// /// Crossterm demo
-// #[derive(Debug, FromArgs)]
-// struct Cli {
-//     /// time in ms between two ticks.
-//     #[argh(option, default = "250")]
-//     tick_rate: u64,
-//     /// whether unicode symbols are used to improve the overall look of the app
-//     #[argh(option, default = "true")]
-//     enhanced_graphics: bool,
-// }
+enum Event<I> {
+    Input(I),
+    Tick,
+}
 
 fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
     let output = command::run_command(command).unwrap();
@@ -71,96 +44,6 @@ fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
 
     parse::parse(trimmed_output)
 }
-
-fn prepare_terminal() -> Result<
-    tui::Terminal<
-        tui::backend::TermionBackend<
-            termion::screen::AlternateScreen<
-                termion::input::MouseTerminal<termion::raw::RawTerminal<std::io::Stdout>>,
-            >,
-        >,
-    >,
-    std::io::Error,
-> {
-    // Terminal initialization
-    let stdout = io::stdout().into_raw_mode()?;
-    let stdout = MouseTerminal::from(stdout);
-    let stdout = AlternateScreen::from(stdout);
-    let backend = TermionBackend::new(stdout);
-    Terminal::new(backend)
-}
-
-// fn main() -> Result<(), Box<dyn Error>> {
-//     let cli: Cli = argh::from_env();
-
-//     enable_raw_mode()?;
-
-//     let mut stdout = stdout();
-//     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-
-//     let backend = CrosstermBackend::new(stdout);
-
-//     let mut terminal = Terminal::new(backend)?;
-
-//     // Setup input handling
-//     let (tx, rx) = mpsc::channel();
-
-//     let tick_rate = Duration::from_millis(cli.tick_rate);
-//     thread::spawn(move || {
-//         let mut last_tick = Instant::now();
-//         loop {
-//             // poll for tick rate duration, if no events, sent tick event.
-//             let timeout = tick_rate
-//                 .checked_sub(last_tick.elapsed())
-//                 .unwrap_or_else(|| Duration::from_secs(0));
-//             if event::poll(timeout).unwrap() {
-//                 if let CEvent::Key(key) = event::read().unwrap() {
-//                     tx.send(Event::Input(key)).unwrap();
-//                 }
-//             }
-//             if last_tick.elapsed() >= tick_rate {
-//                 tx.send(Event::Tick).unwrap();
-//                 last_tick = Instant::now();
-//             }
-//         }
-//     });
-
-//     let mut app = App::new("Crossterm Demo", cli.enhanced_graphics);
-
-//     terminal.clear()?;
-
-//     loop {
-//         terminal.draw(|f| ui::draw(f, &mut app))?;
-//         match rx.recv()? {
-//             Event::Input(event) => match event.code {
-//                 KeyCode::Char('q') => {
-//                     disable_raw_mode()?;
-//                     execute!(
-//                         terminal.backend_mut(),
-//                         LeaveAlternateScreen,
-//                         DisableMouseCapture
-//                     )?;
-//                     terminal.show_cursor()?;
-//                     break;
-//                 }
-//                 KeyCode::Char(c) => app.on_key(c),
-//                 KeyCode::Left => app.on_left(),
-//                 KeyCode::Up => app.on_up(),
-//                 KeyCode::Right => app.on_right(),
-//                 KeyCode::Down => app.on_down(),
-//                 _ => {}
-//             },
-//             Event::Tick => {
-//                 app.on_tick();
-//             }
-//         }
-//         if app.should_quit {
-//             break;
-//         }
-//     }
-
-//     Ok(())
-// }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::new();
@@ -182,32 +65,59 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     app.update_rows(original_rows);
 
-    let mut terminal = prepare_terminal()?;
+    enable_raw_mode()?;
 
-    // Create a separate thread to poll stdin.
-    // This provides non-blocking input support.
-    let mut asi = async_stdin();
+    let mut stdout = stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
 
-    // Input
+    // Setup input handling
+    let (tx, rx) = mpsc::channel();
+
+    let tick_rate = Duration::from_millis(80); // TODO: consider changing value
+    thread::spawn(move || {
+        let mut last_tick = Instant::now();
+        loop {
+            // poll for tick rate duration, if no events, sent tick event.
+            let timeout = tick_rate
+                .checked_sub(last_tick.elapsed())
+                .unwrap_or_else(|| Duration::from_secs(0));
+            if event::poll(timeout).unwrap() {
+                if let CEvent::Key(key) = event::read().unwrap() {
+                    tx.send(Event::Input(key)).unwrap();
+                }
+            }
+            if last_tick.elapsed() >= tick_rate {
+                tx.send(Event::Tick).unwrap();
+                last_tick = Instant::now();
+            }
+        }
+    });
+
+    terminal.clear()?;
+
     loop {
         terminal.draw(|f| ui::draw(f, &mut app))?;
-
-        // Iterate over all the keys that have been pressed since the
-        // last time we checked.
-        // need to wait for event
-        for k in asi.by_ref().keys() {
-            match k.unwrap() {
-                Key::Char('q') => {
-                    terminal.clear()?;
-                    return Ok(());
+        match rx.recv()? {
+            Event::Input(event) => match event.code {
+                KeyCode::Char('q') => {
+                    disable_raw_mode()?;
+                    execute!(
+                        terminal.backend_mut(),
+                        LeaveAlternateScreen,
+                        DisableMouseCapture
+                    )?;
+                    terminal.show_cursor()?;
+                    break;
                 }
-                Key::Down | Key::Char('k') => {
+                KeyCode::Down | KeyCode::Char('k') => {
                     app.table.next();
                 }
-                Key::Up | Key::Char('j') => {
+                KeyCode::Up | KeyCode::Char('j') => {
                     app.table.previous();
                 }
-                Key::Char(c) => {
+                KeyCode::Char(c) => {
                     if app.profile.is_some() {
                         let binding = app
                             .profile
@@ -228,7 +138,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
                 }
                 _ => (),
+            },
+            Event::Tick => {
+                app.on_tick();
             }
         }
+        if app.should_quit {
+            break;
+        }
     }
+
+    Ok(())
 }

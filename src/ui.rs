@@ -8,7 +8,7 @@ use tui::{
   layout::{Constraint, Layout},
   style::{Color, Modifier, Style},
   widgets::{Block, Cell, Paragraph, Row, Table, Wrap},
-  Frame, Terminal,
+  Frame,
 };
 
 pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {

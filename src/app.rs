@@ -11,6 +11,7 @@ pub struct App<'a> {
   pub config: &'a Config,
   pub profile: Option<&'a Profile>,
   pub args: Args,
+  pub should_quit: bool,
 }
 
 impl<'a> App<'a> {
@@ -26,6 +27,7 @@ impl<'a> App<'a> {
       config,
       profile,
       args,
+      should_quit: false,
     }
   }
 
@@ -45,5 +47,9 @@ impl<'a> App<'a> {
     } else if self.table.state.selected().unwrap() > length - 1 {
       self.table.state.select(Some(length - 1));
     }
+  }
+
+  pub fn on_tick(&mut self) {
+    // do nothing for now
   }
 }
