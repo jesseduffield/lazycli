@@ -21,7 +21,6 @@ use tui::{
     Terminal,
 };
 use util::command;
-use util::stateful_table::StatefulTable;
 
 fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
     let output = command::run_command(command).unwrap();
