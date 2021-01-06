@@ -1,6 +1,5 @@
 pub enum After {
   Refresh,
-  Exit,
 }
 
 pub struct KeyBinding {

@@ -197,7 +197,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 &binding.unwrap(),
                                 &app.get_selected_row(),
                             );
-                            let output = command::run_command(&command).unwrap();
                             original_rows = get_rows_from_command(&args.command, lines_to_skip);
                             app.update_rows(original_rows);
                         }
