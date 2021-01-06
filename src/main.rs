@@ -31,6 +31,7 @@ use std::{
 enum Event<I> {
     Input(I),
     Tick,
+    CommandFinished,
 }
 
 fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<parse::Row> {
@@ -61,7 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // maintain a rows array here and derive raw_rows on each loop? That way we can use selected_index and get the original row itself.
-    let mut original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
+    let original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
 
     app.update_rows(original_rows);
 
@@ -69,6 +70,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Setup input handling
     let (tx, rx) = mpsc::channel();
+    let tx_clone = tx.clone();
 
     let tick_rate = Duration::from_millis(1000); // TODO: consider changing value
     thread::spawn(move || {
@@ -80,11 +82,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .unwrap_or_else(|| Duration::from_secs(0));
             if event::poll(timeout).unwrap() {
                 if let CEvent::Key(key) = event::read().unwrap() {
-                    tx.send(Event::Input(key)).unwrap();
+                    tx_clone.send(Event::Input(key)).unwrap();
                 }
             }
             if last_tick.elapsed() >= tick_rate {
-                tx.send(Event::Tick).unwrap();
+                tx_clone.send(Event::Tick).unwrap();
                 last_tick = Instant::now();
             }
         }
@@ -116,14 +118,28 @@ fn main() -> Result<(), Box<dyn Error>> {
                             .find(|&kb| kb.key == c);
 
                         if binding.is_some() {
+                            app.is_loading = true;
+
                             let command = template::resolve_command(
                                 &binding.unwrap(),
-                                &app.get_selected_row(),
+                                app.get_selected_row(),
                             );
-                            command::run_command(&command)?;
-                            // need to set the app state here, then run the command asynchronously and once it's done, update the app.
-                            original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
-                            app.update_rows(original_rows);
+
+                            let tx_clone = tx.clone();
+
+                            thread::spawn(move || {
+                                // TODO: don't just unwrap here
+                                command::run_command(&command).unwrap();
+
+                                // // need to set the app state here, then run the command asynchronously and once it's done, update the app.
+                                // let original_rows =
+                                //     get_rows_from_command(&app.args.command, lines_to_skip);
+                                // app.update_rows(original_rows);
+
+                                // app.is_loading = false;
+
+                                tx_clone.send(Event::CommandFinished).unwrap()
+                            });
                         }
                     }
                 }
@@ -132,6 +148,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Event::Tick => {
                 app.on_tick();
             }
+            Event::CommandFinished => (),
         }
         if app.should_quit {
             break;

@@ -57,7 +57,8 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
   f.render_widget(keybindings_list, rects[1]);
 
-  let status_bar = Paragraph::new("Loading...").style(Style::default().fg(Color::Cyan));
+  let status_bar = Paragraph::new(if app.is_loading { "Loading..." } else { "" })
+    .style(Style::default().fg(Color::Cyan));
 
   f.render_widget(status_bar, rects[2]);
 }
