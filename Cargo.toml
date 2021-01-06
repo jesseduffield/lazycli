@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 tui = "0.14"
-termion = "1.5"
+termion = "1.5.5"
 clap = "3.0.0-beta.2"
 regex = "1"
 

@@ -6,13 +6,16 @@ mod parse;
 mod template;
 mod util;
 
-use crate::util::event::{Event, Events};
 use app::App;
 use args::Args;
 use config::{Config, Profile};
 use std::cmp;
+use std::io::Read;
 use std::{error::Error, io};
-use termion::{event::Key, input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
+use termion::{
+    async_stdin, event::Key, input::MouseTerminal, input::TermRead, raw::IntoRawMode,
+    screen::AlternateScreen,
+};
 use tui::{
     backend::TermionBackend,
     layout::{Constraint, Layout},
@@ -123,12 +126,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     // maintain a rows array here and derive raw_rows on each loop? That way we can use selected_index and get the original row itself.
     let mut original_rows = get_rows_from_command(&args.command, lines_to_skip);
 
-    let events = Events::new();
-
     let mut app = App::new(original_rows);
     app.table.next();
 
     let mut terminal = prepare_terminal()?;
+
+    // Create a separate thread to poll stdin.
+    // This provides non-blocking input support.
+    let mut asi = async_stdin();
 
     let selected_style = Style::default()
         .bg(Color::Blue)
@@ -183,10 +188,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             f.render_widget(status_bar, rects[2]);
         })?;
 
-        if let Event::Input(key) = events.next()? {
-            match key {
+        // Iterate over all the keys that have been pressed since the
+        // last time we checked.
+        for k in asi.by_ref().keys() {
+            match k.unwrap() {
                 Key::Char('q') => {
-                    break;
+                    terminal.clear()?;
+                    return Ok(());
                 }
                 Key::Down | Key::Char('k') => {
                     app.table.next();
@@ -202,6 +210,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 &binding.unwrap(),
                                 &app.get_selected_row(),
                             );
+                            command::run_command(&command)?;
+                            // need to set the app state here, then run the command asynchronously and once it's done, update the app.
                             original_rows = get_rows_from_command(&args.command, lines_to_skip);
                             app.update_rows(original_rows);
                         }
@@ -209,8 +219,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
                 _ => (),
             }
-        };
+        }
     }
-
-    Ok(())
 }
