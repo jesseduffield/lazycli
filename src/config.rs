@@ -8,6 +8,19 @@ pub struct KeyBinding {
   pub command: String,
   pub confirm: bool,
   pub after: After,
+  pub regex: Option<String>,
+}
+
+impl Default for KeyBinding {
+  fn default() -> KeyBinding {
+    KeyBinding {
+      key: ' ',
+      command: String::from(""),
+      confirm: false,
+      after: After::Refresh,
+      regex: None,
+    }
+  }
 }
 
 pub struct Profile {
@@ -34,19 +47,17 @@ impl Config {
               key: 'd',
               command: String::from("rm $0"),
               confirm: true,
-              after: After::Refresh,
+              ..Default::default()
             },
             KeyBinding {
               key: 'o',
               command: String::from("code -r $0"),
-              confirm: true,
-              after: After::Refresh,
+              ..Default::default()
             },
             KeyBinding {
               key: 'u',
               command: String::from("cd $0"),
-              confirm: true,
-              after: After::Refresh,
+              ..Default::default()
             },
           ],
           lines_to_skip: 0,
@@ -59,44 +70,66 @@ impl Config {
               key: 'd',
               command: String::from("rm $8"),
               confirm: true,
-              after: After::Refresh,
+              ..Default::default()
             },
             KeyBinding {
               key: 'o',
               command: String::from("code -r $8"),
-              confirm: true,
-              after: After::Refresh,
+              ..Default::default()
             },
             KeyBinding {
               key: 'u',
               command: String::from("cd $8"),
+              ..Default::default()
+            },
+          ],
+          lines_to_skip: 0,
+        },
+        Profile {
+          name: String::from("git status --short"),
+          registered_commands: vec![String::from("git status --short")],
+          key_bindings: vec![
+            KeyBinding {
+              key: 'A',
+              command: String::from("git add $1"),
+              ..Default::default()
+            },
+            KeyBinding {
+              key: 'a',
+              command: String::from("git reset $1"),
               confirm: true,
-              after: After::Refresh,
+              ..Default::default()
+            },
+            KeyBinding {
+              key: 'd',
+              command: String::from("rm $1"),
+              confirm: true,
+              ..Default::default()
             },
           ],
           lines_to_skip: 0,
         },
         Profile {
           name: String::from("git status"),
-          registered_commands: vec![String::from("git status --short")],
+          registered_commands: vec![String::from("git status")],
           key_bindings: vec![
             KeyBinding {
               key: 'A',
-              command: String::from("git add $1"),
-              confirm: true,
-              after: After::Refresh,
+              command: String::from("git add $0"),
+              ..Default::default()
             },
             KeyBinding {
               key: 'a',
               command: String::from("git reset $1"),
               confirm: true,
-              after: After::Refresh,
+              regex: Some(String::from(".*:\\s+(\\w+)")),
+              ..Default::default()
             },
             KeyBinding {
               key: 'd',
               command: String::from("rm $1"),
               confirm: true,
-              after: After::Refresh,
+              ..Default::default()
             },
           ],
           lines_to_skip: 0,
@@ -109,19 +142,19 @@ impl Config {
               key: 's',
               command: String::from("docker stop $0"),
               confirm: true,
-              after: After::Refresh,
+              ..Default::default()
             },
             KeyBinding {
               key: 'r',
               command: String::from("docker restart $0"),
               confirm: true,
-              after: After::Refresh,
+              ..Default::default()
             },
             KeyBinding {
               key: 'd',
               command: String::from("docker kill $0"),
               confirm: true,
-              after: After::Refresh,
+              ..Default::default()
             },
           ],
           lines_to_skip: 0,
@@ -132,8 +165,7 @@ impl Config {
           key_bindings: vec![KeyBinding {
             key: 'c',
             command: String::from("git checkout $1"),
-            confirm: true,
-            after: After::Refresh,
+            ..Default::default()
           }],
           lines_to_skip: 0,
         },
@@ -147,7 +179,7 @@ impl Config {
             key: 'd',
             command: String::from("kill -9 $1"),
             confirm: true,
-            after: After::Refresh,
+            ..Default::default()
           }],
           lines_to_skip: 0,
         },
