@@ -63,9 +63,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         _ => app.args.lines_to_skip,
     };
 
-    // maintain a rows array here and derive raw_rows on each loop? That way we can use selected_index and get the original row itself.
     let original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
-
     app.update_rows(original_rows);
 
     let mut terminal_manager = TerminalManager::new()?;
@@ -74,7 +72,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let (tx, rx) = mpsc::channel();
     let tx_clone = tx.clone();
 
-    let tick_rate = Duration::from_millis(1000); // TODO: consider changing value
+    let tick_rate = Duration::from_millis(10000); // TODO: do we really need this?
     thread::spawn(move || {
         let mut last_tick = Instant::now();
         loop {
@@ -94,6 +92,34 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
+    let tx_clone = tx.clone();
+    let (ticker_tx, ticker_rx) = mpsc::channel();
+    thread::spawn(move || {
+        let interval = Duration::from_millis(100);
+        let mut is_loading = false;
+
+        loop {
+            thread::sleep(interval);
+
+            is_loading = if is_loading {
+                match ticker_rx.try_recv() {
+                    Ok(v) => v,
+                    Err(mpsc::TryRecvError::Empty) => is_loading,
+                    Err(e) => panic!("Unexpected error: {:?}", e),
+                }
+            } else {
+                match ticker_rx.recv() {
+                    Ok(v) => v,
+                    Err(e) => panic!("Unexpected error: {:?}", e),
+                }
+            };
+
+            if is_loading {
+                tx_clone.send(Event::Tick).unwrap();
+            }
+        }
+    });
+
     terminal_manager.terminal.clear()?;
 
     loop {
@@ -106,6 +132,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             &mut terminal_manager,
             &tx,
             lines_to_skip,
+            &ticker_tx,
         )?;
         if app.should_quit {
             break;
@@ -118,6 +145,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 &mut terminal_manager,
                 &tx,
                 lines_to_skip,
+                &ticker_tx,
             )?;
             if app.should_quit {
                 break;
@@ -132,8 +160,9 @@ fn handle_event(
     event: Event<crossterm::event::KeyEvent>,
     app: &mut App,
     terminal_manager: &mut TerminalManager,
-    tx: &std::sync::mpsc::Sender<Event<crossterm::event::KeyEvent>>,
+    tx: &mpsc::Sender<Event<crossterm::event::KeyEvent>>,
     lines_to_skip: usize,
+    ticker_tx: &mpsc::Sender<bool>,
 ) -> Result<(), Box<dyn Error>> {
     match event {
         Event::Input(event) => match event.code {
@@ -161,6 +190,7 @@ fn handle_event(
                             template::resolve_command(&binding.unwrap(), app.get_selected_row());
 
                         app.status_text = format!("Running command: {}", command);
+                        ticker_tx.send(true).unwrap();
 
                         let tx_clone = tx.clone();
                         thread::spawn(move || {
@@ -180,6 +210,7 @@ fn handle_event(
         Event::CommandFinished => {
             let command = app.args.command.clone();
             app.status_text = format!("Running command: {}", command);
+            ticker_tx.send(true).unwrap();
 
             let tx_clone = tx.clone();
             thread::spawn(move || {
@@ -192,6 +223,7 @@ fn handle_event(
             app.update_rows(rows);
 
             app.status_text = String::from("");
+            ticker_tx.send(false).unwrap();
         }
     }
 

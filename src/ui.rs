@@ -12,6 +12,8 @@ use tui::{
   Frame,
 };
 
+static SPINNER_STATES: &[char] = &['⣾', '⣷', '⣯', '⣟', '⡿', '⢿', '⣻', '⣽'];
+
 fn spinner_frame() -> String {
   // need current time
   let now = SystemTime::now()
@@ -20,9 +22,8 @@ fn spinner_frame() -> String {
     .as_millis()
     / 100;
 
-  let chars = vec!['⣾', '⣷', '⣯', '⣟', '⡿', '⢿', '⣻', '⣽'];
-  let index = (now as usize) % (chars.len() - 1);
-  chars[index].to_string()
+  let index = (now as usize) % (SPINNER_STATES.len() - 1);
+  SPINNER_STATES[index].to_string()
 }
 
 pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
