@@ -2,6 +2,18 @@ pub enum After {
   Refresh,
 }
 
+pub struct Config {
+  pub profiles: Vec<Profile>,
+}
+
+pub struct Profile {
+  pub name: String,
+  pub registered_commands: Vec<String>,
+  pub key_bindings: Vec<KeyBinding>,
+  pub lines_to_skip: usize,
+  pub display_command: Option<DisplayCommand>,
+}
+
 pub struct KeyBinding {
   pub key: char,
   pub command: String,
@@ -22,15 +34,9 @@ impl Default for KeyBinding {
   }
 }
 
-pub struct Profile {
-  pub name: String,
-  pub registered_commands: Vec<String>,
-  pub key_bindings: Vec<KeyBinding>,
-  pub lines_to_skip: usize,
-}
-
-pub struct Config {
-  pub profiles: Vec<Profile>,
+pub struct DisplayCommand {
+  pub command: String,
+  pub regex: Option<String>,
 }
 
 impl Config {
@@ -64,6 +70,7 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
+          display_command: None,
         },
         Profile {
           name: String::from("ls -l"),
@@ -87,6 +94,7 @@ impl Config {
             },
           ],
           lines_to_skip: 1,
+          display_command: None,
         },
         Profile {
           name: String::from("git status --short"),
@@ -111,6 +119,7 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
+          display_command: None,
         },
         Profile {
           name: String::from("git status"),
@@ -136,6 +145,7 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
+          display_command: None,
         },
         Profile {
           name: String::from("docker ps"),
@@ -161,6 +171,7 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
+          display_command: None,
         },
         Profile {
           name: String::from("git branch"),
@@ -171,6 +182,7 @@ impl Config {
             ..Default::default()
           }],
           lines_to_skip: 0,
+          display_command: None,
         },
         Profile {
           name: String::from("lsof -iTCP | grep LISTEN"),
@@ -185,6 +197,7 @@ impl Config {
             ..Default::default()
           }],
           lines_to_skip: 0,
+          display_command: None,
         },
       ],
     }

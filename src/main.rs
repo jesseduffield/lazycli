@@ -123,7 +123,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     terminal_manager.terminal.clear()?;
 
     loop {
-        terminal_manager.terminal.draw(|f| ui::draw(f, &mut app))?;
+        terminal_manager
+            .terminal
+            .draw(|frame| ui::draw(frame, &mut app))?;
 
         // You might be wondering, what's going on here? As it so happens, we're blocking until the first event is received, and then processing any other events in the buffer before continuing. If we only handle one event per iteration of the loop, that's a lot of unnecessary drawing. On the other hand, if we don't block on any events, we'll end up drawing constantly while waiting for the next event to be received, causing CPU to go through the roof.
         handle_event(
