@@ -119,7 +119,10 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
-          display_command: None,
+          display_command: Some(DisplayCommand {
+            command: String::from("cat $1"),
+            regex: None,
+          }),
         },
         Profile {
           name: String::from("git status"),
@@ -171,7 +174,10 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
-          display_command: None,
+          display_command: Some(DisplayCommand {
+            command: String::from("docker inspect $0"),
+            regex: None,
+          }),
         },
         Profile {
           name: String::from("git branch"),

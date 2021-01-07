@@ -6,7 +6,7 @@ use std::cmp;
 use std::time::SystemTime;
 use tui::{
   backend::Backend,
-  layout::{Constraint, Layout, Rect},
+  layout::{Constraint, Direction, Layout, Rect},
   style::{Color, Modifier, Style},
   widgets::{Block, Cell, Paragraph, Row, Table, Wrap},
   Frame,
@@ -33,18 +33,37 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
   let rects = Layout::default()
     .constraints(
       [
-        Constraint::Length(frame.size().height - formatted_keybindings_height - 2),
-        Constraint::Length(1),
-        Constraint::Length(formatted_keybindings_height),
+        Constraint::Length(frame.size().height - 1),
         Constraint::Length(1),
       ]
       .as_ref(),
     )
     .split(frame.size());
 
-  draw_table(app, rects[0], frame);
-  draw_keybindings(app, rects[2], frame, formatted_bindings);
-  draw_status_bar(app, rects[3], frame);
+  draw_status_bar(app, rects[1], frame);
+
+  {
+    let rects = Layout::default()
+      .direction(Direction::Horizontal)
+      //  no right panel for now so setting that to 0 percent
+      .constraints([Constraint::Percentage(100), Constraint::Percentage(0)].as_ref())
+      .split(rects[0]);
+
+    draw_item_render(app, rects[1], frame);
+
+    {
+      let rects = Layout::default()
+        .constraints([
+          Constraint::Length(rects[0].height - formatted_keybindings_height - 2),
+          Constraint::Length(1),
+          Constraint::Length(formatted_keybindings_height),
+        ])
+        .split(rects[0]);
+
+      draw_table(app, rects[0], frame);
+      draw_keybindings(app, rects[2], frame, formatted_bindings);
+    }
+  }
 }
 
 fn draw_table<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
@@ -94,6 +113,12 @@ fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame
   let status_bar = Paragraph::new(status_text).style(Style::default().fg(Color::Cyan));
 
   frame.render_widget(status_bar, rect);
+}
+
+fn draw_item_render<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
+  let paragraph = Paragraph::new("TEST").style(Style::default().fg(Color::Cyan));
+
+  frame.render_widget(paragraph, rect);
 }
 
 fn get_column_widths(rows: &Vec<parse::Row>) -> std::vec::Vec<tui::layout::Constraint> {
