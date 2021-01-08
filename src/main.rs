@@ -4,6 +4,7 @@ mod args;
 mod config;
 mod parse;
 mod template;
+mod terminal_manager;
 mod ui;
 mod util;
 
@@ -14,16 +15,12 @@ use parse::Row;
 
 use std::error::Error;
 
-use tui::{backend::CrosstermBackend, Terminal};
 use util::command;
 
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use terminal_manager::TerminalManager;
+
+use crossterm::event::{self, Event as CEvent, KeyCode};
 use std::{
-    io::stdout,
     sync::mpsc,
     thread,
     time::{Duration, Instant},
@@ -230,31 +227,4 @@ fn handle_event(
     }
 
     Ok(())
-}
-
-struct TerminalManager {
-    terminal: tui::Terminal<tui::backend::CrosstermBackend<std::io::Stdout>>,
-}
-
-impl TerminalManager {
-    fn new() -> Result<TerminalManager, Box<dyn Error>> {
-        enable_raw_mode()?;
-        let mut stdout = stdout();
-        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-        let backend = CrosstermBackend::new(stdout);
-        Ok(TerminalManager {
-            terminal: Terminal::new(backend)?,
-        })
-    }
-
-    fn teardown(&mut self) -> Result<(), Box<dyn Error>> {
-        disable_raw_mode()?;
-        execute!(
-            self.terminal.backend_mut(),
-            LeaveAlternateScreen,
-            DisableMouseCapture
-        )?;
-        // TODO: understand why this works
-        Ok(self.terminal.show_cursor()?)
-    }
 }
