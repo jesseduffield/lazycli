@@ -19,7 +19,7 @@ use util::command;
 
 use terminal_manager::TerminalManager;
 
-use crossterm::event::{self, Event as CEvent, KeyCode};
+use crossterm::event::{self, Event as CEvent, KeyCode, KeyModifiers};
 use std::{
     sync::mpsc,
     thread,
@@ -165,74 +165,85 @@ fn handle_event(
     ticker_tx: &mpsc::Sender<bool>,
 ) -> Result<(), Box<dyn Error>> {
     match event {
-        Event::Input(event) => match app.focused_panel {
-            FocusedPanel::Table => match event.code {
-                KeyCode::Char('q') => {
-                    terminal_manager.teardown()?;
-                    app.should_quit = true;
-                }
-                KeyCode::Esc => {
-                    app.reset_filter_text();
-                }
-                KeyCode::Down | KeyCode::Char('k') => {
-                    app.table.next();
-                }
-                KeyCode::Up | KeyCode::Char('j') => {
-                    app.table.previous();
-                }
-                KeyCode::Char('/') => {
-                    app.focused_panel = FocusedPanel::Search;
-                }
-                KeyCode::Char(c) => {
-                    match app.get_selected_row() {
-                        Some(selected_row) => {
-                            if app.profile.is_some() {
-                                let binding = app
-                                    .profile
-                                    .unwrap()
-                                    .key_bindings
-                                    .iter()
-                                    .find(|&kb| kb.key == c);
+        Event::Input(event) => {
+            if event.code == KeyCode::Char('c') && event.modifiers == KeyModifiers::CONTROL {
+                terminal_manager.teardown()?;
+                app.should_quit = true;
+                return Ok(());
+            }
 
-                                if binding.is_some() {
-                                    let command =
-                                        template::resolve_command(&binding.unwrap(), selected_row);
+            match app.focused_panel {
+                FocusedPanel::Table => match event.code {
+                    KeyCode::Char('q') => {
+                        terminal_manager.teardown()?;
+                        app.should_quit = true;
+                    }
+                    KeyCode::Esc => {
+                        app.reset_filter_text();
+                    }
+                    KeyCode::Down | KeyCode::Char('k') => {
+                        app.table.next();
+                    }
+                    KeyCode::Up | KeyCode::Char('j') => {
+                        app.table.previous();
+                    }
+                    KeyCode::Char('/') => {
+                        app.focused_panel = FocusedPanel::Search;
+                    }
+                    KeyCode::Char(c) => {
+                        match app.get_selected_row() {
+                            Some(selected_row) => {
+                                if app.profile.is_some() {
+                                    let binding = app
+                                        .profile
+                                        .unwrap()
+                                        .key_bindings
+                                        .iter()
+                                        .find(|&kb| kb.key == c);
 
-                                    app.status_text = Some(format!("Running command: {}", command));
-                                    ticker_tx.send(true).unwrap();
+                                    if binding.is_some() {
+                                        let command = template::resolve_command(
+                                            &binding.unwrap(),
+                                            selected_row,
+                                        );
 
-                                    let tx_clone = tx.clone();
-                                    thread::spawn(move || {
-                                        // TODO: don't just unwrap here
-                                        command::run_command(&command).unwrap();
+                                        app.status_text =
+                                            Some(format!("Running command: {}", command));
+                                        ticker_tx.send(true).unwrap();
 
-                                        tx_clone.send(Event::CommandFinished).unwrap()
-                                    });
+                                        let tx_clone = tx.clone();
+                                        thread::spawn(move || {
+                                            // TODO: don't just unwrap here
+                                            command::run_command(&command).unwrap();
+
+                                            tx_clone.send(Event::CommandFinished).unwrap()
+                                        });
+                                    }
                                 }
                             }
+                            None => (),
                         }
-                        None => (),
                     }
-                }
-                _ => (),
-            },
-            FocusedPanel::Search => match event.code {
-                KeyCode::Backspace => {
-                    app.pop_filter_text_char();
-                }
-                KeyCode::Esc => {
-                    app.reset_filter_text();
-                    app.focused_panel = FocusedPanel::Table;
-                }
-                KeyCode::Enter => {
-                    app.focused_panel = FocusedPanel::Table;
-                }
-                KeyCode::Char(c) => {
-                    app.push_filter_text_char(c);
-                }
-                _ => (),
-            },
-        },
+                    _ => (),
+                },
+                FocusedPanel::Search => match event.code {
+                    KeyCode::Backspace => {
+                        app.pop_filter_text_char();
+                    }
+                    KeyCode::Esc => {
+                        app.reset_filter_text();
+                        app.focused_panel = FocusedPanel::Table;
+                    }
+                    KeyCode::Enter => {
+                        app.focused_panel = FocusedPanel::Table;
+                    }
+                    KeyCode::Char(c) => {
+                        app.push_filter_text_char(c);
+                    }
+                    _ => (),
+                },
+            }
+        }
         Event::Tick => {
             app.on_tick();
         }
