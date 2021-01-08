@@ -121,7 +121,25 @@ fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame
 }
 
 fn draw_search_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
-  let mut search_text = String::from("Search: ") + &app.filter_text;
+  let prefix = "Search: ";
+
+  match app.focused_panel {
+    FocusedPanel::Table =>
+      // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
+      {}
+
+    FocusedPanel::Search => {
+      // Make the cursor visible and ask tui-rs to put it at the specified coordinates after rendering
+      frame.set_cursor(
+        // Put cursor past the end of the input text
+        rect.x + app.filter_text.len() as u16 + prefix.len() as u16,
+        // Move one line down, from the border to the input line
+        rect.y,
+      )
+    }
+  }
+
+  let mut search_text = String::from(prefix) + &app.filter_text;
   if app.focused_panel != FocusedPanel::Search {
     search_text = String::from("");
   }

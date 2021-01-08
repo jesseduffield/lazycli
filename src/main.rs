@@ -107,7 +107,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             } else {
                 match ticker_rx.recv() {
                     Ok(v) => v,
-                    Err(e) => panic!("Unexpected error: {:?}", e),
+                    // we get this error when we quit the application so we're just returning false for now
+                    Err(_) => false,
                 }
             };
 
