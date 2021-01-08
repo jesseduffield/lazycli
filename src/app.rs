@@ -12,7 +12,8 @@ pub struct App<'a> {
   pub profile: Option<&'a Profile>,
   pub args: Args,
   pub should_quit: bool,
-  pub status_text: String,
+  pub status_text: Option<String>,
+  pub filter_text: Option<String>,
 }
 
 impl<'a> App<'a> {
@@ -29,7 +30,8 @@ impl<'a> App<'a> {
       profile,
       args,
       should_quit: false,
-      status_text: String::from(""),
+      status_text: None,
+      filter_text: None,
     }
   }
 

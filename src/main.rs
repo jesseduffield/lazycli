@@ -191,7 +191,7 @@ fn handle_event(
                         let command =
                             template::resolve_command(&binding.unwrap(), app.get_selected_row());
 
-                        app.status_text = format!("Running command: {}", command);
+                        app.status_text = Some(format!("Running command: {}", command));
                         ticker_tx.send(true).unwrap();
 
                         let tx_clone = tx.clone();
@@ -211,7 +211,7 @@ fn handle_event(
         }
         Event::CommandFinished => {
             let command = app.args.command.clone();
-            app.status_text = format!("Running command: {}", command);
+            app.status_text = Some(format!("Running command: {}", command));
             ticker_tx.send(true).unwrap();
 
             let tx_clone = tx.clone();
@@ -224,7 +224,7 @@ fn handle_event(
         Event::RowsLoaded(rows) => {
             app.update_rows(rows);
 
-            app.status_text = String::from("");
+            app.status_text = None;
             ticker_tx.send(false).unwrap();
         }
     }

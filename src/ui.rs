@@ -106,8 +106,10 @@ fn draw_keybindings<B: Backend>(
 
 fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
   let status_text = match app.status_text.as_ref() {
-    "" => String::from(""),
-    _ => format!("{} {}", spinner_frame(), app.status_text),
+    Some(text) => match text {
+      _ => format!("{} {}", spinner_frame(), text),
+    },
+    None => String::from(""),
   };
 
   let status_bar = Paragraph::new(status_text).style(Style::default().fg(Color::Cyan));
