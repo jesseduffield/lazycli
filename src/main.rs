@@ -8,7 +8,7 @@ mod terminal_manager;
 mod ui;
 mod util;
 
-use app::App;
+use app::{App, FocusedPanel};
 use args::Args;
 use config::Config;
 use parse::Row;
@@ -164,44 +164,67 @@ fn handle_event(
     ticker_tx: &mpsc::Sender<bool>,
 ) -> Result<(), Box<dyn Error>> {
     match event {
-        Event::Input(event) => match event.code {
-            KeyCode::Char('q') => {
-                terminal_manager.teardown()?;
-                app.should_quit = true;
-            }
-            KeyCode::Down | KeyCode::Char('k') => {
-                app.table.next();
-            }
-            KeyCode::Up | KeyCode::Char('j') => {
-                app.table.previous();
-            }
-            KeyCode::Char(c) => {
-                if app.profile.is_some() {
-                    let binding = app
-                        .profile
-                        .unwrap()
-                        .key_bindings
-                        .iter()
-                        .find(|&kb| kb.key == c);
+        Event::Input(event) => match app.focused_panel {
+            FocusedPanel::Table => match event.code {
+                KeyCode::Char('q') => {
+                    terminal_manager.teardown()?;
+                    app.should_quit = true;
+                }
+                KeyCode::Down | KeyCode::Char('k') => {
+                    app.table.next();
+                }
+                KeyCode::Up | KeyCode::Char('j') => {
+                    app.table.previous();
+                }
+                KeyCode::Char('/') => {
+                    app.focused_panel = FocusedPanel::Search;
+                }
+                KeyCode::Char(c) => {
+                    if app.profile.is_some() {
+                        let binding = app
+                            .profile
+                            .unwrap()
+                            .key_bindings
+                            .iter()
+                            .find(|&kb| kb.key == c);
 
-                    if binding.is_some() {
-                        let command =
-                            template::resolve_command(&binding.unwrap(), app.get_selected_row());
+                        if binding.is_some() {
+                            let command = template::resolve_command(
+                                &binding.unwrap(),
+                                app.get_selected_row(),
+                            );
 
-                        app.status_text = Some(format!("Running command: {}", command));
-                        ticker_tx.send(true).unwrap();
+                            app.status_text = Some(format!("Running command: {}", command));
+                            ticker_tx.send(true).unwrap();
 
-                        let tx_clone = tx.clone();
-                        thread::spawn(move || {
-                            // TODO: don't just unwrap here
-                            command::run_command(&command).unwrap();
+                            let tx_clone = tx.clone();
+                            thread::spawn(move || {
+                                // TODO: don't just unwrap here
+                                command::run_command(&command).unwrap();
 
-                            tx_clone.send(Event::CommandFinished).unwrap()
-                        });
+                                tx_clone.send(Event::CommandFinished).unwrap()
+                            });
+                        }
                     }
                 }
-            }
-            _ => (),
+                _ => (),
+            },
+            FocusedPanel::Search => match event.code {
+                KeyCode::Backspace => {
+                    app.search_text.pop();
+                }
+                KeyCode::Esc => {
+                    app.search_text = String::from("");
+                    app.focused_panel = FocusedPanel::Table;
+                }
+                KeyCode::Enter => {
+                    app.focused_panel = FocusedPanel::Table;
+                }
+                KeyCode::Char(c) => {
+                    app.search_text.push(c);
+                }
+                _ => (),
+            },
         },
         Event::Tick => {
             app.on_tick();

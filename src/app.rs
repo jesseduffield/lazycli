@@ -5,6 +5,12 @@ use crate::config::Profile;
 use crate::parse::Row;
 use crate::util::stateful_table::StatefulTable;
 
+#[derive(PartialEq)]
+pub enum FocusedPanel {
+  Table,
+  Search,
+}
+
 pub struct App<'a> {
   pub rows: Vec<Row>,
   pub table: StatefulTable,
@@ -14,6 +20,8 @@ pub struct App<'a> {
   pub should_quit: bool,
   pub status_text: Option<String>,
   pub filter_text: Option<String>,
+  pub focused_panel: FocusedPanel,
+  pub search_text: String,
 }
 
 impl<'a> App<'a> {
@@ -32,6 +40,8 @@ impl<'a> App<'a> {
       should_quit: false,
       status_text: None,
       filter_text: None,
+      focused_panel: FocusedPanel::Table,
+      search_text: String::from(""),
     }
   }
 

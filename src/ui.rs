@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::{App, FocusedPanel};
 use crate::config::Profile;
 use crate::parse;
 use crate::template;
@@ -33,7 +33,8 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
   let rects = Layout::default()
     .constraints(
       [
-        Constraint::Length(frame.size().height - 1),
+        Constraint::Length(frame.size().height - 2),
+        Constraint::Length(1),
         Constraint::Length(1),
       ]
       .as_ref(),
@@ -41,6 +42,7 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
     .split(frame.size());
 
   draw_status_bar(app, rects[1], frame);
+  draw_search_bar(app, rects[2], frame);
 
   {
     let rects = Layout::default()
@@ -116,6 +118,17 @@ fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame
   let status_bar = Paragraph::new(status_text).style(Style::default().fg(Color::Cyan));
 
   frame.render_widget(status_bar, rect);
+}
+
+fn draw_search_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
+  let mut search_text = String::from("Search: ") + &app.search_text;
+  if app.focused_panel != FocusedPanel::Search {
+    search_text = String::from("lol");
+  }
+
+  let search_bar = Paragraph::new(search_text).style(Style::default().fg(Color::Green));
+
+  frame.render_widget(search_bar, rect);
 }
 
 fn draw_item_render<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
