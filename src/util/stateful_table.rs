@@ -16,7 +16,7 @@ impl StatefulTable {
   pub fn next(&mut self) {
     let i = match self.state.selected() {
       Some(i) => {
-        if i >= self.row_count - 1 {
+        if self.row_count == 0 || i >= self.row_count - 1 {
           i
         } else {
           i + 1

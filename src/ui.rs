@@ -121,9 +121,9 @@ fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame
 }
 
 fn draw_search_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
-  let mut search_text = String::from("Search: ") + &app.search_text;
+  let mut search_text = String::from("Search: ") + &app.filter_text;
   if app.focused_panel != FocusedPanel::Search {
-    search_text = String::from("lol");
+    search_text = String::from("");
   }
 
   let search_bar = Paragraph::new(search_text).style(Style::default().fg(Color::Green));
@@ -168,17 +168,16 @@ fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
     .chain(match profile {
       Some(profile) => match profile.key_bindings.len() {
         0 => vec![String::from("No keybindings set")],
-        _ => profile
-          .key_bindings
-          .iter()
-          .map(|kb| {
-            format!(
-              "{}: {}",
-              kb.key,
-              template::resolve_command(&kb, &app.get_selected_row())
-            )
-          })
-          .collect::<Vec<String>>(),
+        _ => match app.get_selected_row() {
+          Some(row) => profile
+            .key_bindings
+            .iter()
+            .map(|kb| format!("{}: {}", kb.key, template::resolve_command(&kb, &row)))
+            .collect::<Vec<String>>(),
+          None => {
+            vec![String::from("No item selected")]
+          }
+        },
       },
       None => vec![String::from("No profile selected")],
     })

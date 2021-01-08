@@ -19,9 +19,8 @@ pub struct App<'a> {
   pub args: Args,
   pub should_quit: bool,
   pub status_text: Option<String>,
-  pub filter_text: Option<String>,
+  pub filter_text: String,
   pub focused_panel: FocusedPanel,
-  pub search_text: String,
 }
 
 impl<'a> App<'a> {
@@ -39,32 +38,30 @@ impl<'a> App<'a> {
       args,
       should_quit: false,
       status_text: None,
-      filter_text: None,
+      filter_text: String::from(""),
       focused_panel: FocusedPanel::Table,
-      search_text: String::from(""),
     }
   }
 
   pub fn filtered_rows(&self) -> Vec<&Row> {
-    match &self.filter_text {
+    match self.filter_text.as_ref() {
       // TODO: ask if this is idiomatic rust: i.e. converting a Vec<Row> to Vec<&Row>
-      None => self.rows.iter().collect(),
-      Some(filter_text) => self
+      "" => self.rows.iter().collect(),
+      _ => self
         .rows
         .iter()
-        .filter(|row| row.original_line.contains(filter_text))
+        .filter(|row| row.original_line.contains(&self.filter_text))
         .collect(),
     }
   }
 
-  pub fn get_selected_row(&self) -> &Row {
+  pub fn get_selected_row(&self) -> Option<&Row> {
     let selected_index = self.table.state.selected().unwrap();
 
-    &self.filtered_rows()[selected_index]
+    Some(*self.filtered_rows().get(selected_index)?)
   }
 
-  pub fn update_rows(&mut self, rows: Vec<Row>) {
-    self.rows = rows;
+  pub fn adjust_cursor(&mut self) {
     let filtered_rows = self.filtered_rows();
     let length = filtered_rows.len();
     self.table.row_count = length;
@@ -76,7 +73,27 @@ impl<'a> App<'a> {
     }
   }
 
+  pub fn update_rows(&mut self, rows: Vec<Row>) {
+    self.rows = rows;
+    self.adjust_cursor();
+  }
+
   pub fn on_tick(&mut self) {
     // do nothing for now
+  }
+
+  pub fn push_filter_text_char(&mut self, c: char) {
+    self.filter_text.push(c);
+    self.adjust_cursor();
+  }
+
+  pub fn pop_filter_text_char(&mut self) {
+    self.filter_text.pop();
+    self.adjust_cursor();
+  }
+
+  pub fn reset_filter_text(&mut self) {
+    self.filter_text = String::from("");
+    self.adjust_cursor();
   }
 }

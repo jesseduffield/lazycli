@@ -170,6 +170,9 @@ fn handle_event(
                     terminal_manager.teardown()?;
                     app.should_quit = true;
                 }
+                KeyCode::Esc => {
+                    app.reset_filter_text();
+                }
                 KeyCode::Down | KeyCode::Char('k') => {
                     app.table.next();
                 }
@@ -180,48 +183,51 @@ fn handle_event(
                     app.focused_panel = FocusedPanel::Search;
                 }
                 KeyCode::Char(c) => {
-                    if app.profile.is_some() {
-                        let binding = app
-                            .profile
-                            .unwrap()
-                            .key_bindings
-                            .iter()
-                            .find(|&kb| kb.key == c);
+                    match app.get_selected_row() {
+                        Some(selected_row) => {
+                            if app.profile.is_some() {
+                                let binding = app
+                                    .profile
+                                    .unwrap()
+                                    .key_bindings
+                                    .iter()
+                                    .find(|&kb| kb.key == c);
 
-                        if binding.is_some() {
-                            let command = template::resolve_command(
-                                &binding.unwrap(),
-                                app.get_selected_row(),
-                            );
+                                if binding.is_some() {
+                                    let command =
+                                        template::resolve_command(&binding.unwrap(), selected_row);
 
-                            app.status_text = Some(format!("Running command: {}", command));
-                            ticker_tx.send(true).unwrap();
+                                    app.status_text = Some(format!("Running command: {}", command));
+                                    ticker_tx.send(true).unwrap();
 
-                            let tx_clone = tx.clone();
-                            thread::spawn(move || {
-                                // TODO: don't just unwrap here
-                                command::run_command(&command).unwrap();
+                                    let tx_clone = tx.clone();
+                                    thread::spawn(move || {
+                                        // TODO: don't just unwrap here
+                                        command::run_command(&command).unwrap();
 
-                                tx_clone.send(Event::CommandFinished).unwrap()
-                            });
+                                        tx_clone.send(Event::CommandFinished).unwrap()
+                                    });
+                                }
+                            }
                         }
+                        None => (),
                     }
                 }
                 _ => (),
             },
             FocusedPanel::Search => match event.code {
                 KeyCode::Backspace => {
-                    app.search_text.pop();
+                    app.pop_filter_text_char();
                 }
                 KeyCode::Esc => {
-                    app.search_text = String::from("");
+                    app.reset_filter_text();
                     app.focused_panel = FocusedPanel::Table;
                 }
                 KeyCode::Enter => {
                     app.focused_panel = FocusedPanel::Table;
                 }
                 KeyCode::Char(c) => {
-                    app.search_text.push(c);
+                    app.push_filter_text_char(c);
                 }
                 _ => (),
             },
