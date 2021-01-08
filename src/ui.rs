@@ -71,12 +71,13 @@ fn draw_table<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) 
     .bg(Color::Blue)
     .add_modifier(Modifier::BOLD);
 
-  let rows = app.rows.iter().map(|row| {
+  let filtered_rows = app.filtered_rows();
+  let rows = filtered_rows.iter().map(|row| {
     let cells = row.cells.iter().map(|c| Cell::from(c.clone()));
     Row::new(cells).height(1)
   });
 
-  let widths = get_column_widths(&app.rows);
+  let widths = get_column_widths(&filtered_rows);
 
   let table = Table::new(rows)
     .highlight_style(selected_style)
@@ -123,7 +124,7 @@ fn draw_item_render<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Fram
   frame.render_widget(paragraph, rect);
 }
 
-fn get_column_widths(rows: &Vec<parse::Row>) -> std::vec::Vec<tui::layout::Constraint> {
+fn get_column_widths(rows: &Vec<&parse::Row>) -> std::vec::Vec<tui::layout::Constraint> {
   if rows.len() == 0 {
     return vec![];
   }

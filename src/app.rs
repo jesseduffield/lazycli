@@ -35,16 +35,29 @@ impl<'a> App<'a> {
     }
   }
 
+  pub fn filtered_rows(&self) -> Vec<&Row> {
+    match &self.filter_text {
+      // TODO: ask if this is idiomatic rust: i.e. converting a Vec<Row> to Vec<&Row>
+      None => self.rows.iter().collect(),
+      Some(filter_text) => self
+        .rows
+        .iter()
+        .filter(|row| row.original_line.contains(filter_text))
+        .collect(),
+    }
+  }
+
   pub fn get_selected_row(&self) -> &Row {
     let selected_index = self.table.state.selected().unwrap();
 
-    &self.rows[selected_index]
+    &self.filtered_rows()[selected_index]
   }
 
   pub fn update_rows(&mut self, rows: Vec<Row>) {
-    let length = rows.len();
-    self.table.row_count = length;
     self.rows = rows;
+    let filtered_rows = self.filtered_rows();
+    let length = filtered_rows.len();
+    self.table.row_count = length;
     // if our cursor is too far we need to correct it
     if length == 0 {
       self.table.state.select(Some(0));
