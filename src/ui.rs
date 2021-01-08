@@ -28,7 +28,7 @@ fn spinner_frame() -> String {
 
 pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
   let formatted_bindings = display_keybindings(app.profile, &app);
-  let formatted_keybindings_height = (formatted_bindings.lines().count() + 1) as u16;
+  let formatted_keybindings_height = formatted_bindings.lines().count() as u16;
 
   let rects = Layout::default()
     .constraints(
