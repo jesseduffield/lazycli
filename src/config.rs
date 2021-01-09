@@ -34,9 +34,35 @@ impl Default for KeyBinding {
   }
 }
 
+pub trait Command {
+  fn command(&self) -> &str;
+  fn regex(&self) -> Option<&str>;
+}
+
+// TODO: is there a better way to do this?
+impl Command for KeyBinding {
+  fn command(&self) -> &str {
+    return &self.command;
+  }
+  fn regex(&self) -> Option<&str> {
+    return self.regex.as_deref();
+  }
+}
+
+#[derive(Clone)]
 pub struct DisplayCommand {
   pub command: String,
   pub regex: Option<String>,
+}
+
+// TODO: is there a better way to do this?
+impl Command for DisplayCommand {
+  fn command(&self) -> &str {
+    return &self.command;
+  }
+  fn regex(&self) -> Option<&str> {
+    return self.regex.as_deref();
+  }
 }
 
 impl Config {
@@ -70,7 +96,10 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
-          display_command: None,
+          display_command: Some(DisplayCommand {
+            command: String::from("cat $0"),
+            regex: None,
+          }),
         },
         Profile {
           name: String::from("ls -l"),
@@ -120,7 +149,7 @@ impl Config {
           ],
           lines_to_skip: 0,
           display_command: Some(DisplayCommand {
-            command: String::from("cat $1"),
+            command: String::from("git diff $1"),
             regex: None,
           }),
         },
@@ -148,7 +177,10 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
-          display_command: None,
+          display_command: Some(DisplayCommand {
+            command: String::from("git diff $1"),
+            regex: None,
+          }),
         },
         Profile {
           name: String::from("docker ps"),
@@ -188,7 +220,10 @@ impl Config {
             ..Default::default()
           }],
           lines_to_skip: 0,
-          display_command: None,
+          display_command: Some(DisplayCommand {
+            command: String::from("git log --oneline $0"),
+            regex: None,
+          }),
         },
         Profile {
           name: String::from("lsof -iTCP | grep LISTEN"),

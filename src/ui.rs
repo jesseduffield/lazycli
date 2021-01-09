@@ -44,11 +44,23 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
   draw_status_bar(app, rects[1], frame);
   draw_search_bar(app, rects[2], frame);
 
+  let right_panel_percentage_width =
+    if app.profile.is_some() && app.profile.unwrap().display_command.is_some() {
+      50
+    } else {
+      0
+    };
+
   {
     let rects = Layout::default()
       .direction(Direction::Horizontal)
-      //  no right panel for now so setting that to 0 percent
-      .constraints([Constraint::Percentage(100), Constraint::Percentage(0)].as_ref())
+      .constraints(
+        [
+          Constraint::Percentage(100 - right_panel_percentage_width),
+          Constraint::Percentage(right_panel_percentage_width),
+        ]
+        .as_ref(),
+      )
       .split(rects[0]);
 
     draw_item_render(app, rects[1], frame);
@@ -150,7 +162,8 @@ fn draw_search_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame
 }
 
 fn draw_item_render<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
-  let paragraph = Paragraph::new("TEST").style(Style::default().fg(Color::Cyan));
+  let paragraph =
+    Paragraph::new(app.selected_item_content.as_ref()).style(Style::default().fg(Color::Reset));
 
   frame.render_widget(paragraph, rect);
 }
@@ -190,7 +203,7 @@ fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
           Some(row) => profile
             .key_bindings
             .iter()
-            .map(|kb| format!("{}: {}", kb.key, template::resolve_command(&kb, &row)))
+            .map(|kb| format!("{}: {}", kb.key, template::resolve_command(kb, &row)))
             .collect::<Vec<String>>(),
           None => {
             vec![String::from("No item selected")]

@@ -182,9 +182,11 @@ fn handle_event(
                     }
                     KeyCode::Down | KeyCode::Char('k') => {
                         app.table.next();
+                        app.on_select();
                     }
                     KeyCode::Up | KeyCode::Char('j') => {
                         app.table.previous();
+                        app.on_select();
                     }
                     KeyCode::Char('/') => {
                         app.focused_panel = FocusedPanel::Search;
@@ -202,7 +204,7 @@ fn handle_event(
 
                                     if binding.is_some() {
                                         let command = template::resolve_command(
-                                            &binding.unwrap(),
+                                            binding.unwrap(),
                                             selected_row,
                                         );
 

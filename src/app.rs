@@ -3,6 +3,8 @@ use crate::config::Config;
 #[allow(dead_code)]
 use crate::config::Profile;
 use crate::parse::Row;
+use crate::template;
+use crate::util::command;
 use crate::util::stateful_table::StatefulTable;
 
 #[derive(PartialEq)]
@@ -21,6 +23,7 @@ pub struct App<'a> {
   pub status_text: Option<String>,
   pub filter_text: String,
   pub focused_panel: FocusedPanel,
+  pub selected_item_content: String,
 }
 
 impl<'a> App<'a> {
@@ -40,7 +43,19 @@ impl<'a> App<'a> {
       status_text: None,
       filter_text: String::from(""),
       focused_panel: FocusedPanel::Table,
+      selected_item_content: String::from(""),
     }
+  }
+
+  pub fn on_select(&mut self) -> Option<()> {
+    let selected_row = self.get_selected_row()?;
+    let command_template = self.profile?.display_command.as_ref()?;
+    let command = template::resolve_command(command_template, selected_row);
+
+    let output = command::run_command(&command).unwrap();
+    self.selected_item_content = output;
+
+    Some(())
   }
 
   pub fn filtered_rows(&self) -> Vec<&Row> {
