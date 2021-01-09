@@ -101,7 +101,7 @@ fn draw_keybindings<B: Backend>(
       Some(profile) => format!("Keybindings for profile '{}':", profile.name),
       None => String::from("Keybindings:"),
     }))
-    .style(Style::default().fg(Color::Reset))
+    .style(Style::default().fg(Color::Yellow))
     .wrap(Wrap { trim: true });
 
   frame.render_widget(keybindings_list, rect);

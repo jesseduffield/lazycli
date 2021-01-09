@@ -29,7 +29,7 @@ use std::{
 enum Event<I> {
     Input(I),
     Tick,
-    CommandFinished,
+    RefetchData,
     RowsLoaded(Vec<Row>),
 }
 
@@ -59,9 +59,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         },
         _ => app.args.lines_to_skip,
     };
-
-    let original_rows = get_rows_from_command(&app.args.command, lines_to_skip);
-    app.update_rows(original_rows);
 
     let mut terminal_manager = TerminalManager::new()?;
 
@@ -117,6 +114,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     });
+
+    tx.send(Event::RefetchData).unwrap();
 
     terminal_manager.terminal.clear()?;
 
@@ -216,7 +215,7 @@ fn handle_event(
                                             // TODO: don't just unwrap here
                                             command::run_command(&command).unwrap();
 
-                                            tx_clone.send(Event::CommandFinished).unwrap()
+                                            tx_clone.send(Event::RefetchData).unwrap()
                                         });
                                     }
                                 }
@@ -247,9 +246,9 @@ fn handle_event(
         Event::Tick => {
             app.on_tick();
         }
-        Event::CommandFinished => {
+        Event::RefetchData => {
             let command = app.args.command.clone();
-            app.status_text = Some(format!("Running command: {}", command));
+            app.status_text = Some(format!("Running command: {} (if this is taking a while the program might be continuously streaming data which is not yet supported)", command));
             ticker_tx.send(true).unwrap();
 
             let tx_clone = tx.clone();
