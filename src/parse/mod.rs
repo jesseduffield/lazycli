@@ -91,6 +91,9 @@ fn get_column_indices(text: &String) -> Vec<usize> {
   result
 }
 
+// going my_string.char_indices actually returns an iterator where the index
+// is the byte offset rather than the actual index of the char. So we've got our
+// custom CharPosIter struct here to get the behaviour we want.
 struct CharPosIter<'a> {
   s: Chars<'a>,
   index: usize,
@@ -105,9 +108,6 @@ impl<'a> CharPosIter<'a> {
   }
 }
 
-// going my_string.char_indices actually returns an iterator where the index
-// is the byte offset rather than the actual index of the char. So we've got our
-// custom CharPosIter struct here to get the behaviour we want.
 impl<'a> Iterator for CharPosIter<'a> {
   type Item = (usize, char);
 
