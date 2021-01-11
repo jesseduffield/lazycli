@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::iter::FromIterator;
+use std::str::Chars;
 
 #[derive(PartialEq, Debug)]
 pub struct Row {
@@ -28,19 +29,25 @@ pub fn parse(text: String) -> Vec<Row> {
     .map(|line| {
       let mut cells = vec![];
 
-      let mut remainder = line;
       let mut last = 0;
+      // I want to get the chars as an array, then slice that up.
+      let chars = line.chars().collect::<Vec<char>>();
+
       for position in &column_indices[1..] {
-        let (cell, rest) = remainder.split_at(position - last);
-        remainder = rest;
-        cells.push(cell.trim_end().to_owned());
+        push(&mut cells, chars[last..*position].to_owned());
         last = *position;
       }
-      cells.push(remainder.trim_end().to_owned());
+      push(&mut cells, chars[last..].to_owned());
 
       Row::new(line.to_owned(), cells)
     })
     .collect()
+}
+
+fn push(cells: &mut Vec<String>, chars: Vec<char>) {
+  let slice = chars.into_iter().collect::<String>();
+
+  cells.push(slice.trim_end().to_owned());
 }
 
 fn get_column_indices(text: &String) -> Vec<usize> {
@@ -48,8 +55,7 @@ fn get_column_indices(text: &String) -> Vec<usize> {
 
   let first_line = lines.next().unwrap_or_default();
 
-  let spaces_iter = first_line
-    .char_indices()
+  let spaces_iter = CharPosIter::new(first_line)
     // ignoring index 0 for the sake of something like git status --short with a single line i.e. ` M myfile.txt`.
     .filter(|&(index, char)| index != 0 && char == ' ')
     .map(|(index, _char)| index);
@@ -58,8 +64,9 @@ fn get_column_indices(text: &String) -> Vec<usize> {
 
   for line in lines {
     // TODO consider how to remove the .clone() here
+
     for s_index in spaces_set.clone() {
-      for (index, char) in line.char_indices() {
+      for (index, char) in CharPosIter::new(line) {
         if index == s_index && char != ' ' {
           spaces_set.remove(&s_index);
         }
@@ -69,6 +76,7 @@ fn get_column_indices(text: &String) -> Vec<usize> {
 
   let mut spaces = spaces_set.into_iter().collect::<Vec<usize>>();
   spaces.sort();
+
   let mut result = spaces
     .iter()
     .enumerate()
@@ -83,6 +91,36 @@ fn get_column_indices(text: &String) -> Vec<usize> {
   result
 }
 
+struct CharPosIter<'a> {
+  s: Chars<'a>,
+  index: usize,
+}
+
+impl<'a> CharPosIter<'a> {
+  fn new(s: &'a str) -> CharPosIter {
+    CharPosIter {
+      s: s.chars(),
+      index: 0,
+    }
+  }
+}
+
+// going my_string.char_indices actually returns an iterator where the index
+// is the byte offset rather than the actual index of the char. So we've got our
+// custom CharPosIter struct here to get the behaviour we want.
+impl<'a> Iterator for CharPosIter<'a> {
+  type Item = (usize, char);
+
+  fn next(&mut self) -> Option<(usize, char)> {
+    let val = self.s.next()?;
+
+    let result = Some((self.index, val));
+
+    self.index += 1;
+    result
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -91,10 +129,10 @@ mod tests {
   #[test]
   fn test_parse_docker_ps() {
     let text = "CONTAINER ID   IMAGE                       COMMAND              CREATED       STATUS          PORTS                              NAMES\n\
-                17c523089229   aa                          \"./ops/dev/api…\"   2 weeks ago   Up 43 seconds   0.0.0.0:20->80/tcp                 blah\n\
-                dcddf219bb2b   bb                          \"./ops/dev/sid…\"   2 weeks ago   Up 44 seconds                                      blah-sidekiq_2\n\
-                43484e7c2774   dd:latest                   \"ops/dev/proxy…\"   2 weeks ago   Up 46 seconds   0.0.0.0:80->80/tcp                 blah-proxy_4\n\
-                8a61b6cc2d3b   aaaaa:4.0.3-alpine          \"docker.s…\"        2 weeks ago   Up 46 seconds   0.0.0.0:6300->6322/tcp             blah.99_1\n";
+                17c523089229   aa                          \"./ops/dev/api\"      2 weeks ago   Up 43 seconds   0.0.0.0:20->80/tcp                 blah\n\
+                dcddf219bb2b   bb                          \"./ops/dev/sid…\"     2 weeks ago   Up 44 seconds                                      blah-sidekiq_2\n\
+                43484e7c2774   dd:latest                   \"ops/dev/proxy…\"     2 weeks ago   Up 46 seconds   0.0.0.0:80->80/tcp, 9400/tcp       blah-proxy_4\n\
+                8a61b6cc2d3b   aaaaa:4.0.3-alpine          \"docker.s…\"          2 weeks ago   Up 46 seconds   0.0.0.0:6300->6322/tcp             blah.99_1\n";
 
     assert_eq!(parse(String::from(text)), vec![
           Row {
@@ -103,7 +141,6 @@ mod tests {
                     String::from("CONTAINER ID"),
                     String::from("IMAGE"),
                     String::from("COMMAND"),
-                    String::from(""),
                     String::from("CREATED"),
                     String::from(""),
                     String::from("STATUS"),
@@ -112,12 +149,11 @@ mod tests {
                 ],
             },
             Row {
-                original_line: String::from("17c523089229   aa                          \"./ops/dev/api…\"   2 weeks ago   Up 43 seconds   0.0.0.0:20->80/tcp                 blah"),
+                original_line: String::from("17c523089229   aa                          \"./ops/dev/api\"      2 weeks ago   Up 43 seconds   0.0.0.0:20->80/tcp                 blah"),
                 cells: vec![
                     String::from("17c523089229"),
                     String::from("aa"),
-                    String::from("\"./ops/dev/api…"),
-                    String::from("\""),
+                    String::from("\"./ops/dev/api\""),
                     String::from("2 weeks"),
                     String::from("ago"),
                     String::from("Up 43 seconds"),
@@ -126,12 +162,11 @@ mod tests {
                 ],
             },
             Row {
-                original_line: String::from("dcddf219bb2b   bb                          \"./ops/dev/sid…\"   2 weeks ago   Up 44 seconds                                      blah-sidekiq_2"),
+                original_line: String::from("dcddf219bb2b   bb                          \"./ops/dev/sid…\"     2 weeks ago   Up 44 seconds                                      blah-sidekiq_2"),
                 cells: vec![
                     String::from("dcddf219bb2b"),
                     String::from("bb"),
-                    String::from("\"./ops/dev/sid…"),
-                    String::from("\""),
+                    String::from("\"./ops/dev/sid…\""),
                     String::from("2 weeks"),
                     String::from("ago"),
                     String::from("Up 44 seconds"),
@@ -140,27 +175,25 @@ mod tests {
                 ],
             },
             Row {
-                original_line: String::from("43484e7c2774   dd:latest                   \"ops/dev/proxy…\"   2 weeks ago   Up 46 seconds   0.0.0.0:80->80/tcp                 blah-proxy_4"),
+                original_line: String::from("43484e7c2774   dd:latest                   \"ops/dev/proxy…\"     2 weeks ago   Up 46 seconds   0.0.0.0:80->80/tcp, 9400/tcp       blah-proxy_4"),
                 cells: vec![
                     String::from("43484e7c2774"),
                     String::from("dd:latest"),
-                    String::from("\"ops/dev/proxy…"),
-                    String::from("\""),
+                    String::from("\"ops/dev/proxy…\""),
                     String::from("2 weeks"),
                     String::from("ago"),
                     String::from("Up 46 seconds"),
-                    String::from("0.0.0.0:80->80/tcp"),
+                    String::from("0.0.0.0:80->80/tcp, 9400/tcp"),
                     String::from("blah-proxy_4"),
                 ],
             },
 
             Row {
-                original_line: String::from("8a61b6cc2d3b   aaaaa:4.0.3-alpine          \"docker.s…\"        2 weeks ago   Up 46 seconds   0.0.0.0:6300->6322/tcp             blah.99_1"),
+                original_line: String::from("8a61b6cc2d3b   aaaaa:4.0.3-alpine          \"docker.s…\"          2 weeks ago   Up 46 seconds   0.0.0.0:6300->6322/tcp             blah.99_1"),
                 cells: vec![
                     String::from("8a61b6cc2d3b"),
                     String::from("aaaaa:4.0.3-alpine"),
                     String::from("\"docker.s…\""),
-                    String::from(""),
                     String::from("2 weeks"),
                     String::from("ago"),
                     String::from("Up 46 seconds"),
