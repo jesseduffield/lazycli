@@ -48,27 +48,24 @@ pub fn run(mut app: App) -> Result<(), Box<dyn Error>> {
       .terminal
       .draw(|frame| ui::draw(frame, &mut app))?;
 
-    // You might be wondering, what's going on here? As it so happens, we're blocking until the first event is received, and then processing any other events in the buffer before continuing. If we only handle one event per iteration of the loop, that's a lot of unnecessary drawing. On the other hand, if we don't block on any events, we'll end up drawing constantly while waiting for the next event to be received, causing CPU to go through the roof.
-    if !handle_event(
-      rx.recv()?,
-      &mut app,
-      &mut terminal_manager,
-      &tx,
-      lines_to_skip,
-      &loading_tx,
-    )? {
-      break;
-    }
-
-    for backlogged_event in rx.try_iter() {
-      if !handle_event(
-        backlogged_event,
+    let mut on_event = |event: Event<KeyEvent>| -> Result<bool, Box<dyn Error>> {
+      handle_event(
+        event,
         &mut app,
         &mut terminal_manager,
         &tx,
         lines_to_skip,
         &loading_tx,
-      )? {
+      )
+    };
+
+    // You might be wondering, what's going on here? As it so happens, we're blocking until the first event is received, and then processing any other events in the buffer before continuing. If we only handle one event per iteration of the loop, that's a lot of unnecessary drawing. On the other hand, if we don't block on any events, we'll end up drawing constantly while waiting for the next event to be received, causing CPU to go through the roof.
+    if !on_event(rx.recv()?)? {
+      break;
+    }
+
+    for backlogged_event in rx.try_iter() {
+      if !on_event(backlogged_event)? {
         break;
       }
     }
