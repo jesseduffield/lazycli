@@ -6,9 +6,9 @@ use std::cmp;
 use std::time::SystemTime;
 use tui::{
   backend::Backend,
-  layout::{Constraint, Direction, Layout, Rect},
+  layout::{Alignment, Constraint, Direction, Layout, Rect},
   style::{Color, Modifier, Style},
-  widgets::{Block, Cell, Paragraph, Row, Table, Wrap},
+  widgets::{Block, Borders, Cell, Paragraph, Row, Table, Wrap},
   Frame,
 };
 
@@ -29,6 +29,7 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
 
   draw_status_bar(app, rects[1], frame);
   draw_search_bar(app, rects[2], frame);
+  draw_popup(app, frame);
 
   let right_panel_percentage_width =
     if app.profile.is_some() && app.profile.unwrap().display_command.is_some() {
@@ -64,6 +65,28 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
       draw_keybindings(app, rects[2], frame, formatted_bindings);
     }
   }
+}
+
+fn draw_popup<B: Backend>(app: &mut App, frame: &mut tui::Frame<B>) {
+  app.error.as_ref().and_then(|error| {
+    let popup = centered_rect(60, 60, frame.size());
+    let paragraph = Paragraph::new(error.to_owned())
+      .style(
+        Style::default()
+          .fg(Color::LightRed)
+          .add_modifier(Modifier::BOLD),
+      )
+      .block(
+        Block::default()
+          .title("Error")
+          .borders(Borders::ALL)
+          .style(Style::default().fg(Color::Reset)),
+      )
+      .alignment(Alignment::Left)
+      .wrap(Wrap { trim: true });
+    frame.render_widget(paragraph, popup);
+    Some(())
+  });
 }
 
 fn draw_table<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
@@ -106,22 +129,14 @@ fn draw_keybindings<B: Backend>(
 }
 
 fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
-  let status_bar = match &app.error {
-    Some(error) => {
-      let status_text = error.to_owned();
-      Paragraph::new(status_text).style(Style::default().fg(Color::Red))
-    }
-    None => {
-      let status_text = match app.status_text.as_ref() {
-        Some(text) => match text {
-          _ => format!("{} {}", spinner_frame(), text),
-        },
-        None => String::from(""),
-      };
-
-      Paragraph::new(status_text).style(Style::default().fg(Color::Cyan))
-    }
+  let status_text = match app.status_text.as_ref() {
+    Some(text) => match text {
+      _ => format!("{} {}", spinner_frame(), text),
+    },
+    None => String::from(""),
   };
+
+  let status_bar = Paragraph::new(status_text).style(Style::default().fg(Color::Cyan));
 
   frame.render_widget(status_bar, rect);
 }
@@ -130,10 +145,6 @@ fn draw_search_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame
   let prefix = "Search: ";
 
   match app.focused_panel {
-    FocusedPanel::Table =>
-      // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
-      {}
-
     FocusedPanel::Search => {
       // Make the cursor visible and ask tui-rs to put it at the specified coordinates after rendering
       frame.set_cursor(
@@ -143,6 +154,9 @@ fn draw_search_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame
         rect.y,
       )
     }
+    _ =>
+      // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
+      {}
   }
 
   let mut search_text = String::from(prefix) + &app.filter_text;
@@ -225,4 +239,31 @@ fn spinner_frame() -> String {
 
   let index = (now as usize) % (SPINNER_STATES.len() - 1);
   SPINNER_STATES[index].to_string()
+}
+
+// from https://github.com/fdehau/tui-rs/pull/251/files
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+  let popup_layout = Layout::default()
+    .direction(Direction::Vertical)
+    .constraints(
+      [
+        Constraint::Percentage((100 - percent_y) / 2),
+        Constraint::Percentage(percent_y),
+        Constraint::Percentage((100 - percent_y) / 2),
+      ]
+      .as_ref(),
+    )
+    .split(r);
+
+  Layout::default()
+    .direction(Direction::Horizontal)
+    .constraints(
+      [
+        Constraint::Percentage((100 - percent_x) / 2),
+        Constraint::Percentage(percent_x),
+        Constraint::Percentage((100 - percent_x) / 2),
+      ]
+      .as_ref(),
+    )
+    .split(popup_layout[1])[1]
 }

@@ -10,6 +10,7 @@ use crate::template;
 pub enum FocusedPanel {
   Table,
   Search,
+  Popup,
 }
 
 pub struct App<'a> {

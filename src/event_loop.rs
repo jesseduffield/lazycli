@@ -138,9 +138,6 @@ fn handle_event(
   loading_tx: &Sender<bool>,
 ) -> Result<bool, Box<dyn Error>> {
   match event {
-    Event::Error(error) => {
-      app.error = Some(error);
-    }
     Event::Input(event) => {
       if event.code == KeyCode::Char('c') && event.modifiers == KeyModifiers::CONTROL {
         terminal_manager.teardown()?;
@@ -188,8 +185,20 @@ fn handle_event(
           }
           _ => (),
         },
+        FocusedPanel::Popup => match event.code {
+          KeyCode::Char('q') => {
+            terminal_manager.teardown()?;
+            return Ok(false);
+          }
+          KeyCode::Esc => {
+            app.focused_panel = FocusedPanel::Table;
+            app.error = None;
+          }
+          _ => {}
+        },
       }
     }
+
     Event::Tick => {
       app.on_tick();
     }
@@ -198,6 +207,11 @@ fn handle_event(
     }
     Event::RowsLoaded(rows) => {
       on_rows_loaded(app, loading_tx, rows);
+    }
+    Event::Error(error) => {
+      app.error = Some(error);
+      app.focused_panel = FocusedPanel::Popup;
+      app.status_text = None;
     }
   }
 
