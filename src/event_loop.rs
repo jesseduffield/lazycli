@@ -165,34 +165,7 @@ fn handle_event(
             app.focused_panel = FocusedPanel::Search;
           }
           KeyCode::Char(c) => {
-            match app.get_selected_row() {
-              Some(selected_row) => {
-                if app.profile.is_some() {
-                  let binding = app
-                    .profile
-                    .unwrap()
-                    .key_bindings
-                    .iter()
-                    .find(|&kb| kb.key == c);
-
-                  if binding.is_some() {
-                    let command = template::resolve_command(binding.unwrap(), selected_row);
-
-                    app.status_text = Some(format!("Running command: {}", command));
-                    loading_tx.send(true).unwrap();
-
-                    let tx_clone = tx.clone();
-                    thread::spawn(move || {
-                      // TODO: don't just unwrap here
-                      command::run_command(&command).unwrap();
-
-                      tx_clone.send(Event::RefetchData).unwrap()
-                    });
-                  }
-                }
-              }
-              None => (),
-            }
+            handle_keybinding_press(app, loading_tx, tx, c);
           }
           _ => (),
         },
@@ -226,6 +199,30 @@ fn handle_event(
   }
 
   Ok(true)
+}
+
+fn handle_keybinding_press(
+  app: &mut App,
+  loading_tx: &Sender<bool>,
+  tx: &Sender<Event<KeyEvent>>,
+  c: char,
+) -> Option<()> {
+  let binding = app.profile?.key_bindings.iter().find(|&kb| kb.key == c)?;
+
+  let command = template::resolve_command(binding, app.get_selected_row()?);
+
+  app.status_text = Some(format!("Running command: {}", command));
+  loading_tx.send(true).unwrap();
+
+  let tx_clone = tx.clone();
+  thread::spawn(move || {
+    // TODO: don't just unwrap here
+    command::run_command(&command).unwrap();
+
+    tx_clone.send(Event::RefetchData).unwrap()
+  });
+
+  Some(())
 }
 
 fn refetch_data(
