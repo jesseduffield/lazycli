@@ -1,10 +1,14 @@
-use std::io;
 use std::process::Command;
 
-pub fn run_command(command: &str) -> io::Result<String> {
-  let output = Command::new("sh").args(&["-c", command]).output()?;
+pub fn run_command(command: &str) -> Result<String, String> {
+  let output = Command::new("sh")
+    .args(&["-c", command])
+    .output()
+    .expect(&format!("failed to run command {}", command));
 
-  // TODO: handle error here with stderr.
+  if !output.status.success() {
+    return Err(String::from_utf8(output.stderr).unwrap());
+  }
 
   Ok(String::from_utf8(output.stdout).unwrap())
 }
@@ -12,6 +16,15 @@ pub fn run_command(command: &str) -> io::Result<String> {
 #[cfg(test)]
 #[test]
 fn test_run_command() {
-  let result = run_command("echo 1").unwrap();
-  assert_eq!(result, "1\n");
+  let result = run_command("echo 1");
+  assert_eq!(result, Ok(String::from("1\n")));
+}
+
+#[test]
+fn test_run_command_fail() {
+  let result = run_command("asldfkjh test");
+  assert_eq!(
+    result,
+    Err(String::from("sh: asldfkjh: command not found\n"))
+  );
 }

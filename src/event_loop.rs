@@ -18,6 +18,7 @@ enum Event<I> {
   Tick,
   RefetchData,
   RowsLoaded(Vec<Row>),
+  Error(String),
 }
 
 pub fn run(mut app: App) -> Result<(), Box<dyn Error>> {
@@ -137,6 +138,9 @@ fn handle_event(
   loading_tx: &Sender<bool>,
 ) -> Result<bool, Box<dyn Error>> {
   match event {
+    Event::Error(error) => {
+      app.error = Some(error);
+    }
     Event::Input(event) => {
       if event.code == KeyCode::Char('c') && event.modifiers == KeyModifiers::CONTROL {
         terminal_manager.teardown()?;
@@ -210,15 +214,14 @@ fn handle_keybinding_press(
 
   let command = template::resolve_command(binding, app.get_selected_row()?);
 
+  app.error = None; // reset error message
   app.status_text = Some(format!("Running command: {}", command));
   loading_tx.send(true).unwrap();
 
   let tx_clone = tx.clone();
-  thread::spawn(move || {
-    // TODO: don't just unwrap here
-    command::run_command(&command).unwrap();
-
-    tx_clone.send(Event::RefetchData).unwrap()
+  thread::spawn(move || match command::run_command(&command) {
+    Ok(_) => tx_clone.send(Event::RefetchData).unwrap(),
+    Err(error) => tx_clone.send(Event::Error(error)).unwrap(),
   });
 
   Some(())
@@ -231,6 +234,7 @@ fn refetch_data(
   loading_tx: &Sender<bool>,
 ) {
   let command = app.args.command.clone();
+  app.error = None; // reset error message
   app.status_text = Some(format!("Running command: {} (if this is taking a while the program might be continuously streaming data which is not yet supported)", command));
   loading_tx.send(true).unwrap();
 
@@ -238,12 +242,15 @@ fn refetch_data(
   thread::spawn(move || {
     let rows = get_rows_from_command(&command, lines_to_skip);
 
-    tx_clone.send(Event::RowsLoaded(rows)).unwrap()
+    match rows {
+      Ok(rows) => tx_clone.send(Event::RowsLoaded(rows)).unwrap(),
+      Err(error) => tx_clone.send(Event::Error(error)).unwrap(),
+    }
   });
 }
 
-fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<Row> {
-  let output = command::run_command(command).unwrap();
+fn get_rows_from_command(command: &str, skip_lines: usize) -> Result<Vec<Row>, String> {
+  let output = command::run_command(command)?;
 
   let trimmed_output = output
     .lines()
@@ -251,7 +258,7 @@ fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<Row> {
     .collect::<Vec<&str>>()
     .join("\n");
 
-  parse::parse(trimmed_output)
+  Ok(parse::parse(trimmed_output))
 }
 
 fn on_rows_loaded(app: &mut App, loading_tx: &Sender<bool>, rows: Vec<Row>) {

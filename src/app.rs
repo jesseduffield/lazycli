@@ -22,6 +22,7 @@ pub struct App<'a> {
   pub filter_text: String,
   pub focused_panel: FocusedPanel,
   pub selected_item_content: String,
+  pub error: Option<String>,
 }
 
 impl<'a> App<'a> {
@@ -41,6 +42,7 @@ impl<'a> App<'a> {
       filter_text: String::from(""),
       focused_panel: FocusedPanel::Table,
       selected_item_content: String::from(""),
+      error: None,
     }
   }
 

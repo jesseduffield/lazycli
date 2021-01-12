@@ -106,14 +106,22 @@ fn draw_keybindings<B: Backend>(
 }
 
 fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
-  let status_text = match app.status_text.as_ref() {
-    Some(text) => match text {
-      _ => format!("{} {}", spinner_frame(), text),
-    },
-    None => String::from(""),
-  };
+  let status_bar = match &app.error {
+    Some(error) => {
+      let status_text = error.to_owned();
+      Paragraph::new(status_text).style(Style::default().fg(Color::Red))
+    }
+    None => {
+      let status_text = match app.status_text.as_ref() {
+        Some(text) => match text {
+          _ => format!("{} {}", spinner_frame(), text),
+        },
+        None => String::from(""),
+      };
 
-  let status_bar = Paragraph::new(status_text).style(Style::default().fg(Color::Cyan));
+      Paragraph::new(status_text).style(Style::default().fg(Color::Cyan))
+    }
+  };
 
   frame.render_widget(status_bar, rect);
 }
