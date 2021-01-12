@@ -1,12 +1,14 @@
 #[allow(dead_code)]
+// #[cfg(feature = "crossterm")]
 mod app;
 mod args;
+mod command;
 mod config;
 mod parse;
+mod stateful_table;
 mod template;
 mod terminal_manager;
 mod ui;
-mod util;
 
 use app::{App, FocusedPanel};
 use args::Args;
@@ -14,8 +16,6 @@ use config::Config;
 use parse::Row;
 
 use std::error::Error;
-
-use util::command;
 
 use terminal_manager::TerminalManager;
 
