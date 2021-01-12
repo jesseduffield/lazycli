@@ -74,18 +74,6 @@ pub fn run(mut app: App) -> Result<(), Box<dyn Error>> {
   Ok(())
 }
 
-fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<Row> {
-  let output = command::run_command(command).unwrap();
-
-  let trimmed_output = output
-    .lines()
-    .skip(skip_lines)
-    .collect::<Vec<&str>>()
-    .join("\n");
-
-  parse::parse(trimmed_output)
-}
-
 fn poll_events(tx: &Sender<Event<KeyEvent>>) {
   let tick_rate = Duration::from_millis(10000); // TODO: do we really need this?
   let tx_clone = tx.clone();
@@ -256,6 +244,18 @@ fn refetch_data(
 
     tx_clone.send(Event::RowsLoaded(rows)).unwrap()
   });
+}
+
+fn get_rows_from_command(command: &str, skip_lines: usize) -> Vec<Row> {
+  let output = command::run_command(command).unwrap();
+
+  let trimmed_output = output
+    .lines()
+    .skip(skip_lines)
+    .collect::<Vec<&str>>()
+    .join("\n");
+
+  parse::parse(trimmed_output)
 }
 
 fn on_rows_loaded(app: &mut App, loading_tx: &Sender<bool>, rows: Vec<Row>) {
