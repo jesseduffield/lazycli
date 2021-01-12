@@ -202,30 +202,48 @@ fn get_column_widths(rows: &Vec<&parse::Row>) -> std::vec::Vec<tui::layout::Cons
 }
 
 fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
-  default_keybindings()
+  let panel_keybindings = match app.focused_panel {
+    FocusedPanel::Table => {
+      let mut keybindings = vec![
+        String::from("▲/▼/j/k: up/down"),
+        String::from("/: filter"),
+        String::from("esc: clear filter"),
+        String::from("q: quit"),
+      ];
+      keybindings.extend(profile_keybindings(profile, app));
+      keybindings
+    }
+    FocusedPanel::Search => vec![
+      String::from("enter: apply filter"),
+      String::from("esc: cancel filter"),
+    ],
+
+    FocusedPanel::Popup => vec![String::from("esc: close popup"), String::from("q: quit")],
+  };
+
+  panel_keybindings
     .into_iter()
-    .chain(match profile {
-      Some(profile) => match profile.key_bindings.len() {
-        0 => vec![String::from("No keybindings set")],
-        _ => match app.get_selected_row() {
-          Some(row) => profile
-            .key_bindings
-            .iter()
-            .map(|kb| format!("{}: {}", kb.key, template::resolve_command(kb, &row)))
-            .collect::<Vec<String>>(),
-          None => {
-            vec![String::from("No item selected")]
-          }
-        },
-      },
-      None => vec![String::from("No profile selected")],
-    })
     .collect::<Vec<String>>()
     .join("\n")
 }
 
-fn default_keybindings() -> Vec<String> {
-  vec![String::from("▲/▼/j/k: up/down"), String::from("q: quit")]
+fn profile_keybindings(profile: Option<&Profile>, app: &App) -> Vec<String> {
+  match profile {
+    Some(profile) => match profile.key_bindings.len() {
+      0 => vec![String::from("No keybindings set")],
+      _ => match app.get_selected_row() {
+        Some(row) => profile
+          .key_bindings
+          .iter()
+          .map(|kb| format!("{}: {}", kb.key, template::resolve_command(kb, &row)))
+          .collect::<Vec<String>>(),
+        None => {
+          vec![String::from("No item selected")]
+        }
+      },
+    },
+    None => vec![String::from("No profile selected")],
+  }
 }
 
 static SPINNER_STATES: &[char] = &['⣾', '⣷', '⣯', '⣟', '⡿', '⢿', '⣻', '⣽'];
