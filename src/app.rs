@@ -1,7 +1,6 @@
 use crate::args::Args;
 use crate::command;
 use crate::config::Config;
-#[allow(dead_code)]
 use crate::config::Profile;
 use crate::parse::Row;
 use crate::stateful_table::StatefulTable;

@@ -206,10 +206,11 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
-          display_command: Some(DisplayCommand {
-            command: String::from("docker inspect $0"),
-            regex: None,
-          }),
+          display_command: None,
+          // display_command: Some(DisplayCommand {
+          //   command: String::from("docker inspect $0"),
+          //   regex: None,
+          // }),
         },
         Profile {
           name: String::from("git branch"),

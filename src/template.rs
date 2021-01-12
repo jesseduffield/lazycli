@@ -1,5 +1,3 @@
-// adapted from https://stackoverflow.com/questions/53974404/replacing-numbered-placeholders-with-elements-of-a-vector-in-rust
-
 use regex::{Captures, Regex};
 
 use crate::config::Command;
@@ -27,6 +25,7 @@ pub fn resolve_command(command: &dyn Command, row: &Row) -> String {
   template_replace(&command.command(), &matches)
 }
 
+// adapted from https://stackoverflow.com/questions/53974404/replacing-numbered-placeholders-with-elements-of-a-vector-in-rust
 pub fn template_replace(template: &str, values: &[&str]) -> String {
   let regex = Regex::new(r#"\$(\d+)"#).unwrap();
   regex

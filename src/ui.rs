@@ -12,20 +12,6 @@ use tui::{
   Frame,
 };
 
-static SPINNER_STATES: &[char] = &['⣾', '⣷', '⣯', '⣟', '⡿', '⢿', '⣻', '⣽'];
-
-fn spinner_frame() -> String {
-  // need current time
-  let now = SystemTime::now()
-    .duration_since(SystemTime::UNIX_EPOCH)
-    .unwrap()
-    .as_millis()
-    / 100;
-
-  let index = (now as usize) % (SPINNER_STATES.len() - 1);
-  SPINNER_STATES[index].to_string()
-}
-
 pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
   let formatted_bindings = display_keybindings(app.profile, &app);
   let formatted_keybindings_height = formatted_bindings.lines().count() as u16;
@@ -218,4 +204,17 @@ fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
 
 fn default_keybindings() -> Vec<String> {
   vec![String::from("▲/▼/j/k: up/down"), String::from("q: quit")]
+}
+
+static SPINNER_STATES: &[char] = &['⣾', '⣷', '⣯', '⣟', '⡿', '⢿', '⣻', '⣽'];
+
+fn spinner_frame() -> String {
+  let now = SystemTime::now()
+    .duration_since(SystemTime::UNIX_EPOCH)
+    .unwrap()
+    .as_millis()
+    / 100;
+
+  let index = (now as usize) % (SPINNER_STATES.len() - 1);
+  SPINNER_STATES[index].to_string()
 }

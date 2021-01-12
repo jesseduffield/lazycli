@@ -1,18 +1,17 @@
+use crossterm::event::{self, Event as CEvent, KeyCode, KeyEvent, KeyModifiers};
+use std::{
+  error::Error,
+  sync::mpsc::{self, Receiver, Sender},
+  thread,
+  time::{Duration, Instant},
+};
+
 use crate::app::{App, FocusedPanel};
 use crate::command;
 use crate::parse::{self, Row};
 use crate::template;
 use crate::terminal_manager::TerminalManager;
 use crate::ui;
-
-use std::error::Error;
-
-use crossterm::event::{self, Event as CEvent, KeyCode, KeyEvent, KeyModifiers};
-use std::{
-  sync::mpsc::{self, Receiver, Sender},
-  thread,
-  time::{Duration, Instant},
-};
 
 enum Event<I> {
   Input(I),

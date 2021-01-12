@@ -8,7 +8,7 @@ pub struct Args {
 
 impl Args {
   pub fn new() -> Args {
-    let matches = ClapApp::new("LazyList")
+    let matches = ClapApp::new("lazycli")
       .version("0.1")
       .author("Jesse Duffield <jessedduffield@gmail.com>")
       .about("Lets you run custom commands on a list/table returned by another program")

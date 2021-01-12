@@ -1,4 +1,6 @@
 #[allow(dead_code)]
+use std::error::Error;
+
 mod app;
 mod args;
 mod command;
@@ -13,8 +15,6 @@ mod ui;
 use app::App;
 use args::Args;
 use config::Config;
-
-use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::new();
