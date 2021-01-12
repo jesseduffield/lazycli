@@ -11,15 +11,17 @@ pub struct TerminalManager {
   pub terminal: tui::Terminal<tui::backend::CrosstermBackend<std::io::Stdout>>,
 }
 
+// TODO: see if this is the right approach. Perhaps our perhaps we should have a prepare() function pulled out of the new() function
 impl TerminalManager {
   pub fn new() -> Result<TerminalManager, Box<dyn Error>> {
     enable_raw_mode()?;
     let mut stdout = stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
-    Ok(TerminalManager {
-      terminal: Terminal::new(backend)?,
-    })
+    let mut terminal = Terminal::new(backend)?;
+    terminal.clear()?;
+
+    Ok(TerminalManager { terminal })
   }
 
   pub fn teardown(&mut self) -> Result<(), Box<dyn Error>> {

@@ -1,6 +1,8 @@
+mod char_pos_iter;
+
+use char_pos_iter::CharPosIter;
 use std::collections::HashSet;
 use std::iter::FromIterator;
-use std::str::Chars;
 
 #[derive(PartialEq, Debug)]
 pub struct Row {
@@ -64,7 +66,6 @@ fn get_column_indices(text: &String) -> Vec<usize> {
 
   for line in lines {
     // TODO consider how to remove the .clone() here
-
     for s_index in spaces_set.clone() {
       for (index, char) in CharPosIter::new(line) {
         if index == s_index && char != ' ' {
@@ -89,36 +90,6 @@ fn get_column_indices(text: &String) -> Vec<usize> {
   result.insert(0, 0);
 
   result
-}
-
-// going my_string.char_indices actually returns an iterator where the index
-// is the byte offset rather than the actual index of the char. So we've got our
-// custom CharPosIter struct here to get the behaviour we want.
-struct CharPosIter<'a> {
-  s: Chars<'a>,
-  index: usize,
-}
-
-impl<'a> CharPosIter<'a> {
-  fn new(s: &'a str) -> CharPosIter {
-    CharPosIter {
-      s: s.chars(),
-      index: 0,
-    }
-  }
-}
-
-impl<'a> Iterator for CharPosIter<'a> {
-  type Item = (usize, char);
-
-  fn next(&mut self) -> Option<(usize, char)> {
-    let val = self.s.next()?;
-
-    let result = Some((self.index, val));
-
-    self.index += 1;
-    result
-  }
 }
 
 #[cfg(test)]
