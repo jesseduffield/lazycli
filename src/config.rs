@@ -96,10 +96,11 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
-          display_command: Some(DisplayCommand {
-            command: String::from("cat $0"),
-            regex: None,
-          }),
+          // display_command: Some(DisplayCommand {
+          //   command: String::from("cat $0"),
+          //   regex: None,
+          // }),
+          display_command: None,
         },
         Profile {
           name: String::from("ls -l"),
@@ -148,10 +149,11 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
-          display_command: Some(DisplayCommand {
-            command: String::from("git diff $1"),
-            regex: None,
-          }),
+          // display_command: Some(DisplayCommand {
+          //   command: String::from("git diff $1"),
+          //   regex: None,
+          // }),
+          display_command: None,
         },
         Profile {
           name: String::from("git status"),
@@ -177,10 +179,11 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
-          display_command: Some(DisplayCommand {
-            command: String::from("git diff $1"),
-            regex: None,
-          }),
+          // display_command: Some(DisplayCommand {
+          //   command: String::from("git diff $1"),
+          //   regex: None,
+          // }),
+          display_command: None,
         },
         Profile {
           name: String::from("docker ps"),
@@ -221,10 +224,11 @@ impl Config {
             ..Default::default()
           }],
           lines_to_skip: 0,
-          display_command: Some(DisplayCommand {
-            command: String::from("git log --oneline $0"),
-            regex: None,
-          }),
+          // display_command: Some(DisplayCommand {
+          //   command: String::from("git log --oneline $0"),
+          //   regex: None,
+          // }),
+          display_command: None,
         },
         Profile {
           name: String::from("lsof -iTCP | grep LISTEN"),
