@@ -143,9 +143,8 @@ fn draw_table<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) 
 }
 
 fn draw_keybindings<B: Backend>(rect: Rect, frame: &mut tui::Frame<B>, formatted_bindings: String) {
-  let keybindings_list = Paragraph::new(formatted_bindings)
-    .style(Style::default().fg(Color::Yellow))
-    .wrap(Wrap { trim: true });
+  let keybindings_list =
+    Paragraph::new(formatted_bindings).style(Style::default().fg(Color::Yellow));
 
   frame.render_widget(keybindings_list, rect);
 }
