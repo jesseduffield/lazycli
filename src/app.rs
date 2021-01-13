@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use crate::args::Args;
 use crate::command;
-use crate::config::storage;
 use crate::config::Config;
 use crate::config::Profile;
 use crate::parse::Row;
