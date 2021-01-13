@@ -1,7 +1,13 @@
+pub mod prepare;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
   pub profiles: Vec<Profile>,
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
   pub name: String,
   pub registered_commands: Vec<String>,
@@ -10,6 +16,7 @@ pub struct Profile {
   pub display_command: Option<DisplayCommand>,
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyBinding {
   pub key: char,
   pub command: String,
@@ -43,7 +50,7 @@ impl Command for KeyBinding {
   }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DisplayCommand {
   pub command: String,
   pub regex: Option<String>,
@@ -60,6 +67,14 @@ impl Command for DisplayCommand {
 }
 
 impl Config {
+  pub fn to_yaml(&self) -> Result<String, serde_yaml::Error> {
+    serde_yaml::to_string(self)
+  }
+
+  pub fn from_yaml(yaml: String) -> Result<Config, serde_yaml::Error> {
+    serde_yaml::from_str(&yaml)
+  }
+
   pub fn new() -> Config {
     // just doing a dummy one for now
     Config {
