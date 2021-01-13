@@ -240,6 +240,21 @@ impl Config {
           display_command: None,
         },
         Profile {
+          name: String::from("git log"),
+          registered_commands: vec![String::from("git log --oneline")],
+          key_bindings: vec![KeyBinding {
+            key: 'c',
+            command: String::from("git checkout $0"),
+            ..Default::default()
+          }],
+          lines_to_skip: 0,
+          // display_command: Some(DisplayCommand {
+          //   command: String::from("git show $0"),
+          //   regex: None,
+          // }),
+          display_command: None,
+        },
+        Profile {
           name: String::from("lsof -iTCP | grep LISTEN"),
           registered_commands: vec![
             String::from("lsof -iTCP | grep LISTEN"),
