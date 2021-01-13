@@ -26,8 +26,12 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
     )
     .split(frame.size());
 
-  draw_status_bar(app, rects[1], frame);
-  draw_search_bar(app, rects[1], frame);
+  if app.focused_panel == FocusedPanel::Search {
+    draw_search_bar(app, rects[1], frame);
+  } else {
+    draw_status_bar(app, rects[1], frame);
+  }
+
   draw_error_popup(app, frame);
   draw_confirmation_popup(app, frame);
 
@@ -143,10 +147,6 @@ fn draw_keybindings<B: Backend>(rect: Rect, frame: &mut tui::Frame<B>, formatted
 }
 
 fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
-  if app.focused_panel == FocusedPanel::Search {
-    return;
-  }
-
   let status_text = match app.status_text.as_ref() {
     Some(text) => match text {
       _ => format!("{} {}", spinner_frame(), text),
@@ -162,24 +162,13 @@ fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame
 fn draw_search_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
   let prefix = "Search: ";
 
-  match app.focused_panel {
-    FocusedPanel::Search => {
-      // Make the cursor visible and ask tui-rs to put it at the specified coordinates after rendering
-      frame.set_cursor(
-        // Put cursor past the end of the input text
-        rect.x + app.filter_text.len() as u16 + prefix.len() as u16,
-        // Move one line down, from the border to the input line
-        rect.y,
-      )
-    }
-    _ =>
-      // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
-      {}
-  }
-
-  if app.focused_panel != FocusedPanel::Search {
-    return;
-  }
+  // Make the cursor visible and ask tui-rs to put it at the specified coordinates after rendering
+  frame.set_cursor(
+    // Put cursor past the end of the input text
+    rect.x + app.filter_text.len() as u16 + prefix.len() as u16,
+    // Move one line down, from the border to the input line
+    rect.y,
+  );
 
   let search_text = String::from(prefix) + &app.filter_text;
   let search_bar = Paragraph::new(search_text).style(Style::default().fg(Color::Green));
