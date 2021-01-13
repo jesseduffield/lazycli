@@ -117,9 +117,13 @@ fn draw_confirmation_popup<B: Backend>(app: &mut App, frame: &mut tui::Frame<B>)
 }
 
 fn draw_table<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
-  let selected_style = Style::default()
-    .bg(Color::Blue)
-    .add_modifier(Modifier::BOLD);
+  let selected_style = if app.focused_panel == FocusedPanel::Table {
+    Style::default()
+      .bg(Color::Blue)
+      .add_modifier(Modifier::BOLD)
+  } else {
+    Style::default()
+  };
 
   let filtered_rows = app.filtered_rows();
   let rows = filtered_rows.iter().map(|row| {
