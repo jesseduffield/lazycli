@@ -1,7 +1,3 @@
-pub enum After {
-  Refresh,
-}
-
 pub struct Config {
   pub profiles: Vec<Profile>,
 }
@@ -18,7 +14,6 @@ pub struct KeyBinding {
   pub key: char,
   pub command: String,
   pub confirm: bool,
-  pub after: After,
   pub regex: Option<String>,
 }
 
@@ -28,7 +23,6 @@ impl Default for KeyBinding {
       key: ' ',
       command: String::from(""),
       confirm: false,
-      after: After::Refresh,
       regex: None,
     }
   }
