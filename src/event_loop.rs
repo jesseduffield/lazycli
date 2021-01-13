@@ -25,12 +25,13 @@ pub fn run(mut app: App) -> Result<(), Box<dyn Error>> {
   // select the first row (no rows will be loaded at this point but that's okay)
   app.table.next();
 
-  let lines_to_skip = match app.args.lines_to_skip {
-    0 => match app.profile {
+  let lines_to_skip = if app.args.lines_to_skip != 0 {
+    app.args.lines_to_skip
+  } else {
+    match app.profile {
       Some(profile) => profile.lines_to_skip,
       None => 0,
-    },
-    _ => app.args.lines_to_skip,
+    }
   };
 
   let mut terminal_manager = TerminalManager::new()?;
