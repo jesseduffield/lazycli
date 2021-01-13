@@ -19,8 +19,7 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
   let rects = Layout::default()
     .constraints(
       [
-        Constraint::Length(frame.size().height - 2),
-        Constraint::Length(1),
+        Constraint::Length(frame.size().height - 1),
         Constraint::Length(1),
       ]
       .as_ref(),
@@ -28,7 +27,7 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
     .split(frame.size());
 
   draw_status_bar(app, rects[1], frame);
-  draw_search_bar(app, rects[2], frame);
+  draw_search_bar(app, rects[1], frame);
   draw_error_popup(app, frame);
   draw_confirmation_popup(app, frame);
 
@@ -144,6 +143,10 @@ fn draw_keybindings<B: Backend>(rect: Rect, frame: &mut tui::Frame<B>, formatted
 }
 
 fn draw_status_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
+  if app.focused_panel == FocusedPanel::Search {
+    return;
+  }
+
   let status_text = match app.status_text.as_ref() {
     Some(text) => match text {
       _ => format!("{} {}", spinner_frame(), text),
@@ -174,11 +177,11 @@ fn draw_search_bar<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame
       {}
   }
 
-  let mut search_text = String::from(prefix) + &app.filter_text;
   if app.focused_panel != FocusedPanel::Search {
-    search_text = String::from("");
+    return;
   }
 
+  let search_text = String::from(prefix) + &app.filter_text;
   let search_bar = Paragraph::new(search_text).style(Style::default().fg(Color::Green));
 
   frame.render_widget(search_bar, rect);
