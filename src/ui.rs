@@ -68,25 +68,27 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
 }
 
 fn draw_popup<B: Backend>(app: &mut App, frame: &mut tui::Frame<B>) {
-  app.error.as_ref().and_then(|error| {
-    let popup = centered_rect(60, 60, frame.size());
-    let paragraph = Paragraph::new(error.to_owned())
-      .style(
-        Style::default()
-          .fg(Color::LightRed)
-          .add_modifier(Modifier::BOLD),
-      )
-      .block(
-        Block::default()
-          .title("Error")
-          .borders(Borders::ALL)
-          .style(Style::default().fg(Color::Reset)),
-      )
-      .alignment(Alignment::Left)
-      .wrap(Wrap { trim: true });
-    frame.render_widget(paragraph, popup);
-    Some(())
-  });
+  match &app.focused_panel {
+    FocusedPanel::ErrorPopup(error) => {
+      let popup = centered_rect(60, 60, frame.size());
+      let paragraph = Paragraph::new(error.to_owned())
+        .style(
+          Style::default()
+            .fg(Color::LightRed)
+            .add_modifier(Modifier::BOLD),
+        )
+        .block(
+          Block::default()
+            .title("Error")
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::Reset)),
+        )
+        .alignment(Alignment::Left)
+        .wrap(Wrap { trim: true });
+      frame.render_widget(paragraph, popup);
+    }
+    _ => (),
+  }
 }
 
 fn draw_table<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) {
@@ -218,7 +220,7 @@ fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
       String::from("esc: cancel filter"),
     ],
 
-    FocusedPanel::Popup => vec![String::from("esc: close popup"), String::from("q: quit")],
+    FocusedPanel::ErrorPopup(_) => vec![String::from("esc: close popup"), String::from("q: quit")],
   };
 
   panel_keybindings

@@ -10,7 +10,9 @@ use crate::template;
 pub enum FocusedPanel {
   Table,
   Search,
-  Popup,
+  // TODO: should I store the error here in the enum, given
+  // it isn't needed anywhere else, and only applies to that panel?
+  ErrorPopup(String),
 }
 
 pub struct App<'a> {
@@ -23,7 +25,6 @@ pub struct App<'a> {
   pub filter_text: String,
   pub focused_panel: FocusedPanel,
   pub selected_item_content: String,
-  pub error: Option<String>,
 }
 
 impl<'a> App<'a> {
@@ -43,7 +44,6 @@ impl<'a> App<'a> {
       filter_text: String::from(""),
       focused_panel: FocusedPanel::Table,
       selected_item_content: String::from(""),
-      error: None,
     }
   }
 

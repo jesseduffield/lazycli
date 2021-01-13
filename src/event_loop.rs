@@ -185,14 +185,13 @@ fn handle_event(
           }
           _ => (),
         },
-        FocusedPanel::Popup => match event.code {
+        FocusedPanel::ErrorPopup(_) => match event.code {
           KeyCode::Char('q') => {
             terminal_manager.teardown()?;
             return Ok(false);
           }
           KeyCode::Esc => {
             app.focused_panel = FocusedPanel::Table;
-            app.error = None;
           }
           _ => {}
         },
@@ -209,8 +208,7 @@ fn handle_event(
       on_rows_loaded(app, loading_tx, rows);
     }
     Event::Error(error) => {
-      app.error = Some(error);
-      app.focused_panel = FocusedPanel::Popup;
+      app.focused_panel = FocusedPanel::ErrorPopup(error);
       app.status_text = None;
     }
   }
@@ -228,7 +226,6 @@ fn handle_keybinding_press(
 
   let command = template::resolve_command(binding, app.get_selected_row()?);
 
-  app.error = None; // reset error message
   app.status_text = Some(format!("Running command: {}", command));
   loading_tx.send(true).unwrap();
 
@@ -248,7 +245,6 @@ fn refetch_data(
   loading_tx: &Sender<bool>,
 ) {
   let command = app.args.command.clone();
-  app.error = None; // reset error message
   app.status_text = Some(format!("Running command: {} (if this is taking a while the program might be continuously streaming data which is not yet supported)", command));
   loading_tx.send(true).unwrap();
 
