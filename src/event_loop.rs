@@ -165,6 +165,15 @@ fn handle_event(
           KeyCode::Char('/') => {
             app.focused_panel = FocusedPanel::Search;
           }
+          KeyCode::Char('$') => {
+            // TODO: wonder if the typical user would prefer opening the file or switching to vim to edit it? If they do want to open it, we probably need an OS-specific command to be entered here.
+            run_command(
+              app,
+              loading_tx,
+              tx,
+              format!("open {}", app.config_path.to_str().unwrap()),
+            );
+          }
           KeyCode::Char(c) => {
             handle_keybinding_press(app, loading_tx, tx, c);
           }

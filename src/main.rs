@@ -14,13 +14,14 @@ mod ui;
 
 use app::App;
 use args::Args;
-use config::prepare;
+use config::storage;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::new();
-    let config = prepare::prepare_config()?;
+    let config_path = storage::config_path()?;
+    let config = storage::prepare_config(&config_path)?;
 
-    let app = App::new(&config, args);
+    let app = App::new(&config, config_path, args);
 
     event_loop::run(app)?;
 

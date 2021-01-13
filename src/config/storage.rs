@@ -1,16 +1,18 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::PathBuf;
 use xdg::BaseDirectories;
 
 use super::Config;
 
-pub fn prepare_config() -> Result<Config, Box<dyn Error>> {
+pub fn config_path() -> Result<PathBuf, Box<dyn Error>> {
   let xdg_dirs = BaseDirectories::with_prefix("lazycli")?;
-  let config_path = xdg_dirs
-    .place_config_file("config.yml")
-    .expect("cannot create configuration directory");
 
+  Ok(xdg_dirs.place_config_file("config.yml")?)
+}
+
+pub fn prepare_config(config_path: &PathBuf) -> Result<Config, Box<dyn Error>> {
   if config_path.exists() {
     let mut file = File::open(config_path)?;
     let mut contents = String::new();

@@ -2,6 +2,7 @@ use crate::app::{App, FocusedPanel};
 use crate::config::Profile;
 use crate::template;
 
+// TODO: derive keybinding menu from our actual key handlers in event_loop.rs
 pub fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
   let panel_keybindings = match app.focused_panel {
     FocusedPanel::Table => {
@@ -10,6 +11,10 @@ pub fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
         String::from("/: filter"),
         String::from("esc: clear filter"),
         String::from("q: quit"),
+        format!(
+          "$: open config file (open {})",
+          app.config_path.to_str().unwrap()
+        ),
       ];
       keybindings.extend(profile_keybindings(profile, app));
       keybindings

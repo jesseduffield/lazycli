@@ -1,5 +1,8 @@
+use std::path::PathBuf;
+
 use crate::args::Args;
 use crate::command;
+use crate::config::storage;
 use crate::config::Config;
 use crate::config::Profile;
 use crate::parse::Row;
@@ -26,10 +29,12 @@ pub struct App<'a> {
   pub filter_text: String,
   pub focused_panel: FocusedPanel,
   pub selected_item_content: String,
+  pub config_path: PathBuf,
 }
 
 impl<'a> App<'a> {
-  pub fn new(config: &'a Config, args: Args) -> App<'a> {
+  // TODO: do we really need a reference to the config? We should probably move it in here. But then we need to still work out how to have a profile field. We could either make that a function or make it an immutable reference
+  pub fn new(config: &'a Config, config_path: PathBuf, args: Args) -> App<'a> {
     let profile = config
       .profiles
       .iter()
@@ -45,6 +50,7 @@ impl<'a> App<'a> {
       filter_text: String::from(""),
       focused_panel: FocusedPanel::Table,
       selected_item_content: String::from(""),
+      config_path,
     }
   }
 
