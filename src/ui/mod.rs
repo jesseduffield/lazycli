@@ -56,14 +56,14 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
     {
       let rects = Layout::default()
         .constraints([
-          Constraint::Length(rects[0].height - formatted_keybindings_height - 2),
+          Constraint::Length(rects[0].height - formatted_keybindings_height - 1),
           Constraint::Length(1),
           Constraint::Length(formatted_keybindings_height),
         ])
         .split(rects[0]);
 
       draw_table(app, rects[0], frame);
-      draw_keybindings(app, rects[2], frame, formatted_bindings);
+      draw_keybindings(rects[2], frame, formatted_bindings);
     }
   }
 }
@@ -135,17 +135,8 @@ fn draw_table<B: Backend>(app: &mut App, rect: Rect, frame: &mut tui::Frame<B>) 
   frame.render_stateful_widget(table, rect, &mut app.table.state);
 }
 
-fn draw_keybindings<B: Backend>(
-  app: &mut App,
-  rect: Rect,
-  frame: &mut tui::Frame<B>,
-  formatted_bindings: String,
-) {
+fn draw_keybindings<B: Backend>(rect: Rect, frame: &mut tui::Frame<B>, formatted_bindings: String) {
   let keybindings_list = Paragraph::new(formatted_bindings)
-    .block(Block::default().title(match app.profile {
-      Some(profile) => format!("Keybindings for profile '{}':", profile.name),
-      None => String::from("Keybindings:"),
-    }))
     .style(Style::default().fg(Color::Yellow))
     .wrap(Wrap { trim: true });
 
