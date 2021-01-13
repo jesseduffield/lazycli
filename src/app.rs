@@ -13,6 +13,7 @@ pub enum FocusedPanel {
   // TODO: should I store the error here in the enum, given
   // it isn't needed anywhere else, and only applies to that panel?
   ErrorPopup(String),
+  ConfirmationPopup(String),
 }
 
 pub struct App<'a> {

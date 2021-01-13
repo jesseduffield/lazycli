@@ -195,6 +195,22 @@ fn handle_event(
           }
           _ => {}
         },
+        FocusedPanel::ConfirmationPopup(ref command) => match event.code {
+          KeyCode::Enter => {
+            // interesting lesson here: if I have command.clone() in the call to run_command itself (i.e. no intermediate variable) I get an error for borrowing app twice because I borrow it once to get the command and then I pass it as a mutable reference into the run_command function. With this intermediate variable, rust knows we no longer need the reference to app so I'm okay to go ahead and get the mutable reference.
+            let cloned_command = command.clone();
+            run_command(app, loading_tx, tx, cloned_command);
+            app.focused_panel = FocusedPanel::Table;
+          }
+          KeyCode::Char('q') => {
+            terminal_manager.teardown()?;
+            return Ok(false);
+          }
+          KeyCode::Esc => {
+            app.focused_panel = FocusedPanel::Table;
+          }
+          _ => {}
+        },
       }
     }
 
@@ -226,6 +242,21 @@ fn handle_keybinding_press(
 
   let command = template::resolve_command(binding, app.get_selected_row()?);
 
+  if binding.confirm {
+    app.focused_panel = FocusedPanel::ConfirmationPopup(command);
+  } else {
+    run_command(app, loading_tx, tx, command);
+  }
+
+  Some(())
+}
+
+fn run_command(
+  app: &mut App,
+  loading_tx: &Sender<bool>,
+  tx: &Sender<Event<KeyEvent>>,
+  command: String,
+) {
   app.status_text = Some(format!("Running command: {}", command));
   loading_tx.send(true).unwrap();
 
@@ -234,8 +265,6 @@ fn handle_keybinding_press(
     Ok(_) => tx_clone.send(Event::RefetchData).unwrap(),
     Err(error) => tx_clone.send(Event::Error(error)).unwrap(),
   });
-
-  Some(())
 }
 
 fn refetch_data(

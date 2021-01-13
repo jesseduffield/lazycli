@@ -198,7 +198,7 @@ impl Config {
             KeyBinding {
               key: 'r',
               command: String::from("docker restart $0"),
-              confirm: true,
+              confirm: false,
               ..Default::default()
             },
             KeyBinding {

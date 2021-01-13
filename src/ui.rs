@@ -29,7 +29,8 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
 
   draw_status_bar(app, rects[1], frame);
   draw_search_bar(app, rects[2], frame);
-  draw_popup(app, frame);
+  draw_error_popup(app, frame);
+  draw_confirmation_popup(app, frame);
 
   let right_panel_percentage_width =
     if app.profile.is_some() && app.profile.unwrap().display_command.is_some() {
@@ -67,27 +68,48 @@ pub fn draw<B: Backend>(frame: &mut Frame<B>, app: &mut App) {
   }
 }
 
-fn draw_popup<B: Backend>(app: &mut App, frame: &mut tui::Frame<B>) {
-  match &app.focused_panel {
-    FocusedPanel::ErrorPopup(error) => {
-      let popup = centered_rect(60, 60, frame.size());
-      let paragraph = Paragraph::new(error.to_owned())
-        .style(
-          Style::default()
-            .fg(Color::LightRed)
-            .add_modifier(Modifier::BOLD),
-        )
-        .block(
-          Block::default()
-            .title("Error")
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::Reset)),
-        )
-        .alignment(Alignment::Left)
-        .wrap(Wrap { trim: true });
-      frame.render_widget(paragraph, popup);
-    }
-    _ => (),
+fn draw_error_popup<B: Backend>(app: &mut App, frame: &mut tui::Frame<B>) {
+  if let FocusedPanel::ErrorPopup(error) = &app.focused_panel {
+    let popup = centered_rect(60, 60, frame.size());
+    let paragraph = Paragraph::new(error.to_owned())
+      .style(
+        Style::default()
+          .fg(Color::LightRed)
+          .add_modifier(Modifier::BOLD),
+      )
+      .block(
+        Block::default()
+          .title("Error")
+          .borders(Borders::ALL)
+          .style(Style::default().fg(Color::Reset)),
+      )
+      .alignment(Alignment::Left)
+      .wrap(Wrap { trim: true });
+    frame.render_widget(paragraph, popup);
+  }
+}
+
+fn draw_confirmation_popup<B: Backend>(app: &mut App, frame: &mut tui::Frame<B>) {
+  if let FocusedPanel::ConfirmationPopup(command) = &app.focused_panel {
+    let popup = centered_rect(60, 10, frame.size());
+    let paragraph = Paragraph::new(format!(
+      "Are you sure you want to run command: `{}`?",
+      command
+    ))
+    .style(
+      Style::default()
+        .fg(Color::Reset)
+        .add_modifier(Modifier::BOLD),
+    )
+    .block(
+      Block::default()
+        .title("Confirm")
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::Reset)),
+    )
+    .alignment(Alignment::Left)
+    .wrap(Wrap { trim: true });
+    frame.render_widget(paragraph, popup);
   }
 }
 
@@ -219,8 +241,12 @@ fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {
       String::from("enter: apply filter"),
       String::from("esc: cancel filter"),
     ],
-
     FocusedPanel::ErrorPopup(_) => vec![String::from("esc: close popup"), String::from("q: quit")],
+    FocusedPanel::ConfirmationPopup(_) => vec![
+      String::from("enter: run command"),
+      String::from("esc: cancel"),
+      String::from("q: quit"),
+    ],
   };
 
   panel_keybindings
