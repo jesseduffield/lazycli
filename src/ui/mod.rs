@@ -94,7 +94,7 @@ fn draw_error_popup<B: Backend>(app: &mut App, frame: &mut tui::Frame<B>) {
 
 fn draw_confirmation_popup<B: Backend>(app: &mut App, frame: &mut tui::Frame<B>) {
   if let FocusedPanel::ConfirmationPopup(command) = &app.focused_panel {
-    let popup = centered_rect(60, 10, frame.size());
+    let popup = centered_rect(60, 20, frame.size());
     let paragraph = Paragraph::new(format!(
       "Are you sure you want to run command: `{}`?",
       command
