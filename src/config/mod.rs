@@ -89,7 +89,7 @@ impl Config {
           key_bindings: vec![
             KeyBinding {
               key: 'd',
-              command: String::from("rm $0"),
+              command: String::from("rm -rf $0"),
               confirm: true,
               ..Default::default()
             },
@@ -117,7 +117,7 @@ impl Config {
           key_bindings: vec![
             KeyBinding {
               key: 'd',
-              command: String::from("rm $8"),
+              command: String::from("rm -rf $8"),
               confirm: true,
               ..Default::default()
             },
@@ -147,12 +147,12 @@ impl Config {
             KeyBinding {
               key: 'a',
               command: String::from("git reset $1"),
-              confirm: true,
+              confirm: false,
               ..Default::default()
             },
             KeyBinding {
               key: 'd',
-              command: String::from("rm $1"),
+              command: String::from("rm -rf $1"),
               confirm: true,
               ..Default::default()
             },
@@ -182,7 +182,7 @@ impl Config {
             },
             KeyBinding {
               key: 'd',
-              command: String::from("rm $1"),
+              command: String::from("rm -rf $1"),
               confirm: true,
               ..Default::default()
             },
