@@ -1,7 +1,7 @@
 use std::process::Command;
 
 pub fn run_command(command: &str) -> Result<String, String> {
-  let output = Command::new("sh")
+  let output = Command::new("bash")
     .args(&["-c", command])
     .output()
     .expect(&format!("failed to run command {}", command));
