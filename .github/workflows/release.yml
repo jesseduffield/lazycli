@@ -93,18 +93,18 @@ jobs:
           - os: ubuntu-latest
             rust: stable
             target: x86_64-unknown-linux-gnu
-            bin: martin
-            name: martin-Linux-x86_64.tar.gz
+            bin: lazycli
+            name: lazycli-Linux-x86_64.tar.gz
           - os: windows-latest
             rust: stable
             target: x86_64-pc-windows-msvc
-            bin: martin.exe
-            name: martin-Windows-x86_64.zip
+            bin: lazycli.exe
+            name: lazycli-Windows-x86_64.zip
           - os: macOS-latest
             rust: stable
             target: x86_64-apple-darwin
-            bin: martin
-            name: martin-Darwin-x86_64.tar.gz
+            bin: lazycli
+            name: lazycli-Darwin-x86_64.tar.gz
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install stable toolchain
@@ -139,7 +139,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          files: "martin*"
+          files: "lazycli*"
           body_path: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
