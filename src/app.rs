@@ -1,12 +1,13 @@
 use std::path::PathBuf;
 
-use crate::args::Args;
-use crate::command;
-use crate::config::Config;
-use crate::config::Profile;
-use crate::parse::Row;
-use crate::stateful_table::StatefulTable;
-use crate::template;
+use crate::{
+  args::Args,
+  command,
+  config::{Config, Profile},
+  parse::Row,
+  stateful_table::StatefulTable,
+  template,
+};
 
 #[derive(PartialEq)]
 pub enum FocusedPanel {

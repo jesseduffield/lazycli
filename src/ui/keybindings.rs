@@ -1,6 +1,8 @@
-use crate::app::{App, FocusedPanel};
-use crate::config::Profile;
-use crate::template;
+use crate::{
+  app::{App, FocusedPanel},
+  config::Profile,
+  template,
+};
 
 // TODO: derive keybinding menu from our actual key handlers in event_loop.rs
 pub fn display_keybindings(profile: Option<&Profile>, app: &App) -> String {

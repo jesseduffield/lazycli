@@ -1,9 +1,10 @@
 mod keybindings;
 
-use crate::app::{App, FocusedPanel};
-use crate::parse;
-use std::cmp;
-use std::time::SystemTime;
+use crate::{
+  app::{App, FocusedPanel},
+  parse,
+};
+use std::{cmp, time::SystemTime};
 use tui::{
   backend::Backend,
   layout::{Alignment, Constraint, Direction, Layout, Rect},

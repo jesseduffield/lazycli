@@ -1,8 +1,7 @@
 mod char_pos_iter;
 
 use char_pos_iter::CharPosIter;
-use std::collections::HashSet;
-use std::iter::FromIterator;
+use std::{collections::HashSet, iter::FromIterator};
 
 #[derive(PartialEq, Debug)]
 pub struct Row {

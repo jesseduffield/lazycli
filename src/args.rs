@@ -1,5 +1,4 @@
-use clap::App as ClapApp;
-use clap::Arg;
+use clap::{App as ClapApp, Arg};
 
 pub struct Args {
   pub command: String,

@@ -17,13 +17,13 @@ use args::Args;
 use config::storage;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let args = Args::new();
-    let config_path = storage::config_path()?;
-    let config = storage::prepare_config(&config_path)?;
+  let args = Args::new();
+  let config_path = storage::config_path()?;
+  let config = storage::prepare_config(&config_path)?;
 
-    let app = App::new(&config, config_path, args);
+  let app = App::new(&config, config_path, args);
 
-    event_loop::run(app)?;
+  event_loop::run(app)?;
 
-    Ok(())
+  Ok(())
 }

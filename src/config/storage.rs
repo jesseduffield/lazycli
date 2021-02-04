@@ -1,7 +1,4 @@
-use std::error::Error;
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::PathBuf;
+use std::{error::Error, fs::File, io::prelude::*, path::PathBuf};
 use xdg::BaseDirectories;
 
 use super::Config;

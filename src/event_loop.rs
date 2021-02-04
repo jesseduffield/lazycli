@@ -6,12 +6,14 @@ use std::{
   time::{Duration, Instant},
 };
 
-use crate::app::{App, FocusedPanel};
-use crate::command;
-use crate::parse::{self, Row};
-use crate::template;
-use crate::terminal_manager::TerminalManager;
-use crate::ui;
+use crate::{
+  app::{App, FocusedPanel},
+  command,
+  parse::{self, Row},
+  template,
+  terminal_manager::TerminalManager,
+  ui,
+};
 
 enum Event<I> {
   Input(I),
