@@ -25,6 +25,6 @@ fn test_run_command_fail() {
   let result = run_command("asldfkjh test");
   assert_eq!(
     result,
-    Err(String::from("sh: asldfkjh: command not found\n"))
+    Err(String::from("bash: asldfkjh: command not found\n"))
   );
 }
