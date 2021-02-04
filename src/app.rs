@@ -66,13 +66,20 @@ impl<'a> App<'a> {
   }
 
   pub fn filtered_rows(&self) -> Vec<&Row> {
+    let lc_filter_text = self.filter_text.to_ascii_lowercase();
+
     match self.filter_text.as_ref() {
       // TODO: ask if this is idiomatic rust: i.e. converting a Vec<Row> to Vec<&Row>
       "" => self.rows.iter().collect(),
       _ => self
         .rows
         .iter()
-        .filter(|row| row.original_line.contains(&self.filter_text))
+        .filter(|row| {
+          row
+            .original_line
+            .to_ascii_lowercase()
+            .contains(&lc_filter_text)
+        })
         .collect(),
     }
   }
