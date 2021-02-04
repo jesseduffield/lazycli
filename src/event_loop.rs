@@ -8,7 +8,7 @@ use std::{
 
 use crate::{
   app::{App, FocusedPanel},
-  command,
+  command, os_commands,
   parse::{self, Row},
   template,
   terminal_manager::TerminalManager,
@@ -173,7 +173,11 @@ fn handle_event(
               app,
               loading_tx,
               tx,
-              format!("open {}", app.config_path.to_str().unwrap()),
+              format!(
+                "{} {}",
+                os_commands::open_command(),
+                app.config_path.to_str().unwrap()
+              ),
             );
           }
           KeyCode::Char(c) => {
