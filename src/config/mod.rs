@@ -13,6 +13,7 @@ pub struct Profile {
   pub registered_commands: Vec<String>,
   pub key_bindings: Vec<KeyBinding>,
   pub lines_to_skip: usize,
+  pub refresh_frequency: Option<f64>,
   pub display_command: Option<DisplayCommand>,
 }
 
@@ -105,6 +106,7 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
+          refresh_frequency: None,
           // display_command: Some(DisplayCommand {
           //   command: String::from("cat $0"),
           //   regex: None,
@@ -133,6 +135,7 @@ impl Config {
             },
           ],
           lines_to_skip: 1,
+          refresh_frequency: None,
           display_command: None,
         },
         Profile {
@@ -158,6 +161,7 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
+          refresh_frequency: None,
           // display_command: Some(DisplayCommand {
           //   command: String::from("git diff $1"),
           //   regex: None,
@@ -188,6 +192,7 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
+          refresh_frequency: None,
           // display_command: Some(DisplayCommand {
           //   command: String::from("git diff $1"),
           //   regex: None,
@@ -218,6 +223,7 @@ impl Config {
             },
           ],
           lines_to_skip: 0,
+          refresh_frequency: None,
           display_command: None,
           // display_command: Some(DisplayCommand {
           //   command: String::from("docker inspect $0"),
@@ -233,6 +239,7 @@ impl Config {
             ..Default::default()
           }],
           lines_to_skip: 0,
+          refresh_frequency: None,
           // display_command: Some(DisplayCommand {
           //   command: String::from("git log --oneline $0"),
           //   regex: None,
@@ -248,6 +255,7 @@ impl Config {
             ..Default::default()
           }],
           lines_to_skip: 0,
+          refresh_frequency: None,
           // display_command: Some(DisplayCommand {
           //   command: String::from("git show $0"),
           //   regex: None,
@@ -267,6 +275,7 @@ impl Config {
             ..Default::default()
           }],
           lines_to_skip: 0,
+          refresh_frequency: None,
           display_command: None,
         },
       ],

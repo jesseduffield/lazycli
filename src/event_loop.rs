@@ -6,6 +6,8 @@ use std::{
   time::{Duration, Instant},
 };
 
+use ticker::Ticker;
+
 use crate::{
   app::{App, FocusedPanel},
   command, os_commands,
@@ -18,7 +20,7 @@ use crate::{
 enum Event<I> {
   Input(I),
   Tick,
-  RefetchData,
+  RefetchData(bool), // the bool here is true if it's a background refetch
   RowsLoaded(Vec<Row>),
   Error(String),
 }
@@ -36,15 +38,26 @@ pub fn run(mut app: App) -> Result<(), Box<dyn Error>> {
     }
   };
 
+  // comparing two floating points directly: probably not advisable?
+  let refresh_frequency = if app.args.refresh_frequency != 0.0 {
+    app.args.refresh_frequency
+  } else {
+    match app.profile {
+      Some(profile) => profile.refresh_frequency.unwrap_or(0.0),
+      None => 0.0,
+    }
+  };
+
   let mut terminal_manager = TerminalManager::new()?;
 
   let (tx, rx) = mpsc::channel();
   let (loading_tx, loading_rx) = mpsc::channel();
 
   poll_events(&tx);
+  poll_refetches(&tx, refresh_frequency);
   poll_loading(&tx, loading_rx);
 
-  tx.send(Event::RefetchData).unwrap();
+  tx.send(Event::RefetchData(false)).unwrap();
 
   loop {
     terminal_manager
@@ -78,7 +91,7 @@ pub fn run(mut app: App) -> Result<(), Box<dyn Error>> {
 }
 
 fn poll_events(tx: &Sender<Event<KeyEvent>>) {
-  let tick_rate = Duration::from_millis(10000); // TODO: do we really need this?
+  let tick_rate = Duration::from_millis(10000); // TODO: do we actually need this?
   let tx_clone = tx.clone();
 
   thread::spawn(move || {
@@ -93,10 +106,26 @@ fn poll_events(tx: &Sender<Event<KeyEvent>>) {
           tx_clone.send(Event::Input(key)).unwrap();
         }
       }
+
       if last_tick.elapsed() >= tick_rate {
-        tx_clone.send(Event::Tick).unwrap();
         last_tick = Instant::now();
       }
+    }
+  });
+}
+
+fn poll_refetches(tx: &Sender<Event<KeyEvent>>, refresh_frequency: f64) {
+  if refresh_frequency == 0.0 {
+    return;
+  }
+
+  let tick_rate = Duration::from_millis((refresh_frequency * 1000.0).round() as u64);
+  let tx_clone = tx.clone();
+
+  thread::spawn(move || {
+    let ticker = Ticker::new(0.., tick_rate);
+    for _ in ticker {
+      tx_clone.send(Event::RefetchData(true)).ok();
     }
   });
 }
@@ -233,8 +262,8 @@ fn handle_event(
     Event::Tick => {
       app.on_tick();
     }
-    Event::RefetchData => {
-      refetch_data(app, tx, lines_to_skip, loading_tx);
+    Event::RefetchData(background) => {
+      refetch_data(app, tx, lines_to_skip, loading_tx, background);
     }
     Event::RowsLoaded(rows) => {
       on_rows_loaded(app, loading_tx, rows);
@@ -278,7 +307,7 @@ fn run_command(
 
   let tx_clone = tx.clone();
   thread::spawn(move || match command::run_command(&command) {
-    Ok(_) => tx_clone.send(Event::RefetchData).unwrap(),
+    Ok(_) => tx_clone.send(Event::RefetchData(false)).unwrap(),
     Err(error) => tx_clone.send(Event::Error(error)).unwrap(),
   });
 }
@@ -288,9 +317,14 @@ fn refetch_data(
   tx: &Sender<Event<KeyEvent>>,
   lines_to_skip: usize,
   loading_tx: &Sender<bool>,
+  background: bool,
 ) {
   let command = app.args.command.clone();
-  app.status_text = Some(format!("Running command: {} (if this is taking a while the program might be continuously streaming data which is not yet supported)", command));
+  app.status_text = Some(if background {
+    String::from("")
+  } else {
+    format!("Running command: {} (if this is taking a while the program might be continuously streaming data which is not yet supported)", command)
+  });
   loading_tx.send(true).unwrap();
 
   let tx_clone = tx.clone();

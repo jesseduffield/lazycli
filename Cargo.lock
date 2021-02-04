@@ -223,6 +223,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_yaml",
+ "ticker",
  "tui",
  "xdg",
 ]
@@ -531,6 +532,12 @@ checksum = "d40c6d1b69745a6ec6fb1ca717914848da4b44ae29d9b3080cbee91d72a69b14"
 dependencies = [
  "lazy_static",
 ]
+
+[[package]]
+name = "ticker"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f6821a2afe2700471d4572a25bcbfc091d6d596902a279ed41af139f350b76e"
 
 [[package]]
 name = "tui"
