@@ -6,8 +6,6 @@ on:
   push:
     tags: 'v*'
 
-env:
-  REPO_NAME: lazycli
 jobs:
   create_release:
     runs-on: ubuntu-latest
@@ -25,6 +23,8 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
   upload_assets:
+    env:
+      REPO_NAME: lazycli
     needs: create_release
     strategy:
       matrix:
