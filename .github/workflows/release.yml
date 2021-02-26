@@ -30,14 +30,14 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: ${{ REPO_NAME }}
-            asset_name: ${{ REPO_NAME }}-linux-x64.tar.gz
+            artifact_name: $REPO_NAME
+            asset_name: "${REPO_NAME}-linux-x64.tar.gz"
           - os: macos-latest
-            artifact_name: ${{ REPO_NAME }}
-            asset_name: ${{ REPO_NAME }}-darwin-x64.tar.gz
+            artifact_name: $REPO_NAME
+            asset_name: "${REPO_NAME}-darwin-x64.tar.gz"
           - os: windows-latest
-            artifact_name: ${{ REPO_NAME }}.exe
-            asset_name: ${{ REPO_NAME }}-win-x64.tar.gz
+            artifact_name: "${REPO_NAME}.exe"
+            asset_name: "${REPO_NAME}-win-x64.tar.gz"
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout the source code
