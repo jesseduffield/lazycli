@@ -1,145 +1,62 @@
-name: CI
+# Adapted from Shaun Zhu's comment on https://mateuscosta.me/rust-releases-with-github-actions
+
+name: release
 
 on:
   push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+    tags: 'v*'
 
 jobs:
-  check:
-    name: Check
+  create_release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-
-  # clippy:
-  #   name: Clippy
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout sources
-  #       uses: actions/checkout@v2
-
-  #     - name: Install stable toolchain
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         toolchain: stable
-  #         override: true
-
-  #     - name: Install clippy
-  #       run: rustup component add clippy
-
-  #     - name: Run cargo clippy
-  #       uses: actions-rs/cargo@v1
-  #       with:
-  #         command: clippy
-  #         args: -- -D warnings
-
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      - name: Install rustfmt
-        run: rustup component add rustfmt
-
-      - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-      - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose
-
-  release:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: [test]
+    - name: create release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+  upload_assets:
+    needs: create_release
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            rust: stable
-            target: x86_64-unknown-linux-gnu
-            bin: lazycli
-            name: lazycli-Linux-x86_64.tar.gz
+            artifact_name: lazycli
+            asset_name: lazycli-linux-x64.tar.gz
+          - os: macos-latest
+            artifact_name: lazycli
+            asset_name: lazycli-darwin-x64.tar.gz
           - os: windows-latest
-            rust: stable
-            target: x86_64-pc-windows-msvc
-            bin: lazycli.exe
-            name: lazycli-Windows-x86_64.zip
-          - os: macOS-latest
-            rust: stable
-            target: x86_64-apple-darwin
-            bin: lazycli
-            name: lazycli-Darwin-x86_64.tar.gz
+            artifact_name: lazycli.exe
+            asset_name: lazycli-win-x64.tar.gz
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-          target: ${{ matrix.target }}
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Run build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.target }}
-      - name: Package
-        shell: bash
-        run: |
-          strip target/${{ matrix.target }}/release/${{ matrix.bin }}
-          cd target/${{ matrix.target }}/release
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]
-          then
-            7z a ../../../${{ matrix.name }} ${{ matrix.bin }}
-          else
-            tar czvf ../../../${{ matrix.name }} ${{ matrix.bin }}
-          fi
-          cd -
-      - name: Generate SHA-256
-        if: matrix.os == 'macOS-latest'
-        run: shasum -a 256 ${{ matrix.name }}
-      - name: Publish
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: true
-          files: "lazycli*"
-          body_path: CHANGELOG.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: checkout the source code
+      uses: actions/checkout@v2
+    - name: build (release)
+      run: cargo build --verbose --release
+    - name: compress
+      uses: master-atul/tar-action@v1.0.2
+      with:
+        command: c
+        cwd: ./target/release
+        files: |
+          ${{ matrix.artifact_name }}
+        outPath: ./target/release/${{ matrix.asset_name }}
+    - name: upload release assets
+      id: upload-release-assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_path: ./target/release/${{ matrix.asset_name }}
+        asset_name: ${{ matrix.asset_name }}
+        asset_content_type: application/tar+gzip
