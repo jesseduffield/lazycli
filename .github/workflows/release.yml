@@ -6,6 +6,8 @@ on:
   push:
     tags: 'v*'
 
+env:
+  REPO_NAME: lazycli
 jobs:
   create_release:
     runs-on: ubuntu-latest
@@ -28,14 +30,14 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: lazycli
-            asset_name: lazycli-linux-x64.tar.gz
+            artifact_name: ${{ REPO_NAME }}
+            asset_name: ${{ REPO_NAME }}-linux-x64.tar.gz
           - os: macos-latest
-            artifact_name: lazycli
-            asset_name: lazycli-darwin-x64.tar.gz
+            artifact_name: ${{ REPO_NAME }}
+            asset_name: ${{ REPO_NAME }}-darwin-x64.tar.gz
           - os: windows-latest
-            artifact_name: lazycli.exe
-            asset_name: lazycli-win-x64.tar.gz
+            artifact_name: ${{ REPO_NAME }}.exe
+            asset_name: ${{ REPO_NAME }}-win-x64.tar.gz
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout the source code
