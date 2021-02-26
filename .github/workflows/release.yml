@@ -23,21 +23,19 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
   upload_assets:
-    env:
-      REPO_NAME: lazycli
     needs: create_release
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: ${{ env.REPO_NAME }}
-            asset_name: ${{ env.REPO_NAME }}-linux-x64.tar.gz
+            artifact_name: lazycli
+            asset_name: lazycli-linux-x64.tar.gz
           - os: macos-latest
-            artifact_name: ${{ env.REPO_NAME }}
-            asset_name: ${{ env.REPO_NAME }}-darwin-x64.tar.gz
+            artifact_name: lazycli
+            asset_name: lazycli-darwin-x64.tar.gz
           - os: windows-latest
-            artifact_name: ${{ env.REPO_NAME }}.exe
-            asset_name: ${{ env.REPO_NAME }}-win-x64.tar.gz
+            artifact_name: lazycli.exe
+            asset_name: lazycli-win-x64.tar.gz
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout the source code
