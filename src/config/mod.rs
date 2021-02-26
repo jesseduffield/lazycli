@@ -7,13 +7,27 @@ pub struct Config {
   pub profiles: Vec<Profile>,
 }
 
+pub trait IsZero {
+  fn is_zero(&self) -> bool;
+}
+
+impl IsZero for usize {
+  fn is_zero(&self) -> bool {
+    *self == 0
+  }
+}
+
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
   pub name: String,
   pub registered_commands: Vec<String>,
   pub key_bindings: Vec<KeyBinding>,
+  #[serde(default = "usize::default")]
+  #[serde(skip_serializing_if = "IsZero::is_zero")]
   pub lines_to_skip: usize,
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub refresh_frequency: Option<f64>,
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub display_command: Option<DisplayCommand>,
 }
 
@@ -22,6 +36,7 @@ pub struct KeyBinding {
   pub key: char,
   pub command: String,
   pub confirm: bool,
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub regex: Option<String>,
 }
 
@@ -96,7 +111,7 @@ impl Config {
             },
             KeyBinding {
               key: 'o',
-              command: String::from("code -r $0"),
+              command: String::from("open $0"),
               ..Default::default()
             },
             KeyBinding {
@@ -125,7 +140,7 @@ impl Config {
             },
             KeyBinding {
               key: 'o',
-              command: String::from("code -r $8"),
+              command: String::from("open $8"),
               ..Default::default()
             },
             KeyBinding {
