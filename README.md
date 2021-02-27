@@ -10,7 +10,7 @@ Demo:
 
 ## Usage
 
-Pick a command that spits out either a list or table of content, like `ls`, `docker ps`, `git branch`, or `git status --short`. Then run `lazygit -- <YOUR COMMAND>`
+Pick a command that spits out either a list or table of content, like `ls`, `docker ps`, `git branch`, or `git status --short`. Then run `lazycli -- <YOUR COMMAND>`
 ```
 lazycli -- ls
 ```
