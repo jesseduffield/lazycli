@@ -1,8 +1,15 @@
 [package]
 name = "lazycli"
-version = "0.1.0"
+version = "0.1.12"
 authors = ["Jesse Duffield <jessedduffield@gmail.com>"]
+license = "MIT"
 edition = "2018"
+description = "A tool to instantly wrap your CLI commands in TUIs"
+readme = "README.md"
+homepage = "https://github.com/jesseduffield/lazycli"
+repository = "https://github.com/jesseduffield/lazycli"
+keywords = ["cli", "lazy", "terminal", "tools"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
