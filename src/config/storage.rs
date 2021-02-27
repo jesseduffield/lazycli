@@ -1,13 +1,11 @@
 use std::{error::Error, fs::File, io::prelude::*, path::PathBuf};
-use xdg::BaseDirectories;
 
 use super::Config;
 
-pub fn config_path() -> Result<PathBuf, Box<dyn Error>> {
-  let xdg_dirs = BaseDirectories::with_prefix("lazycli")?;
-
-  Ok(xdg_dirs.place_config_file("config.yml")?)
-}
+#[cfg_attr(target_os = "linux", path = "windows.rs")]
+#[cfg_attr(target_os = "macos", path = "windows.rs")]
+#[cfg_attr(windows, path = "windows.rs")]
+pub mod os;
 
 pub fn prepare_config(config_path: &PathBuf) -> Result<Config, Box<dyn Error>> {
   if config_path.exists() {

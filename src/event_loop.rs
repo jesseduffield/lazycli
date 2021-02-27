@@ -203,7 +203,7 @@ fn handle_event(
               loading_tx,
               tx,
               format!(
-                "{} {}",
+                "{} \"{}\"",
                 os_commands::open_command(),
                 app.config_path.to_str().unwrap()
               ),
