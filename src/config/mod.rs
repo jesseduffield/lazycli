@@ -17,6 +17,16 @@ impl IsZero for usize {
   }
 }
 
+pub trait IsFalse {
+  fn is_false(&self) -> bool;
+}
+
+impl IsFalse for bool {
+  fn is_false(&self) -> bool {
+    !*self
+  }
+}
+
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
   pub name: String,
@@ -35,6 +45,8 @@ pub struct Profile {
 pub struct KeyBinding {
   pub key: char,
   pub command: String,
+  #[serde(default = "bool::default")]
+  #[serde(skip_serializing_if = "IsFalse::is_false")]
   pub confirm: bool,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub regex: Option<String>,
