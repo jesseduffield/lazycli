@@ -5,7 +5,8 @@
 Turn static CLI commands into TUIs with ease
 
 Demo:
-[<img src="../assets/demo-thumbnail.png">](https://www.youtube.com/watch?v=CRzcOpjuYSs&ab_channel=JesseDuffield)
+
+[<img src="../assets/demo-thumbnail.png" width="380px">](https://www.youtube.com/watch?v=CRzcOpjuYSs&ab_channel=JesseDuffield)
 
 ## Usage
 
