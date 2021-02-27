@@ -25,7 +25,19 @@ lazycli is best suited towards any command-line program that spits out a list of
 
 ## Installation
 
-### via Rust
+### Via Cargo
+
+```
+cargo install lazycli
+```
+
+
+### Via binary
+
+Download the binary from the [Releases Page](https://github.com/jesseduffield/lazycli/releases)
+
+
+### Building from source
 
 1) clone the repo:
 ```
@@ -38,12 +50,7 @@ cargo install --path .
 3) run
 ```
 lazycli -- ls
-```
-
-### via Binary
-
-Download the binary from the [Releases Page](https://github.com/jesseduffield/lazycli/releases)
-
+```t
 
 ## QandA
 * Q: Isn't this what fzf does?
