@@ -4,6 +4,9 @@
 
 Turn static CLI commands into TUIs with ease
 
+Demo:
+[<img src="../assets/demo-thumbnail.png">](https://www.youtube.com/watch?v=CRzcOpjuYSs&ab_channel=JesseDuffield)
+
 ## Usage
 
 Pick a command that spits out either a list or table of content, like `ls`, `docker ps`, `git branch`, or `git status --short`. Then run `lazygit -- <YOUR COMMAND>`
