@@ -13,7 +13,6 @@ clap = "3.0.0-beta.2"
 regex = "1"
 serde = "1.0"
 serde_yaml = "0.8.15"
-xdg = "2.2.0"
 directories = "3.0"
 ticker = "0.1.1"
 
