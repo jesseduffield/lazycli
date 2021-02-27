@@ -1,8 +1,8 @@
 # lazycli
 
-![Demo Animation](../assets/demo.gif?raw=true)
-
 Turn static CLI commands into TUIs with ease
+
+![Demo Animation](../assets/demo.gif?raw=true)
 
 Demo:
 
