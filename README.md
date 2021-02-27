@@ -54,7 +54,7 @@ cargo install --path .
 3) run
 ```
 lazycli -- ls
-```t
+```
 
 ## QandA
 * Q: Isn't this what fzf does?
