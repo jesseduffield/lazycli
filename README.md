@@ -46,5 +46,5 @@ Download the binary from the [Releases Page](https://github.com/jesseduffield/la
 
 
 ## QandA
-Q: Isn't this what fzf does?
-A: Not quite: fzf requires you to know the command ahead of time whereas lazycli lets you run commands after presenting you the data, and the content is refreshed after you run the command rather than the program closing (admittedly I haven't used fzf but I'm pretty sure that's all correct).
+* Q: Isn't this what fzf does?
+* A: Not quite: fzf requires you to know the command ahead of time whereas lazycli lets you run commands after presenting you the data, and the content is refreshed after you run the command rather than the program closing (admittedly I haven't used fzf but I'm pretty sure that's all correct).
