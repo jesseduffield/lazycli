@@ -185,11 +185,11 @@ fn handle_event(
           KeyCode::Esc => {
             app.reset_filter_text();
           }
-          KeyCode::Down | KeyCode::Char('k') => {
+          KeyCode::Down | KeyCode::Char('j') => {
             app.table.next();
             app.on_select();
           }
-          KeyCode::Up | KeyCode::Char('j') => {
+          KeyCode::Up | KeyCode::Char('k') => {
             app.table.previous();
             app.on_select();
           }
