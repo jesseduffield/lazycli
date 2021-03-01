@@ -1,6 +1,6 @@
 [package]
 name = "lazycli"
-version = "0.1.12"
+version = "0.1.14"
 authors = ["Jesse Duffield <jessedduffield@gmail.com>"]
 license = "MIT"
 edition = "2018"
