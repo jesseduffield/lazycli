@@ -169,6 +169,14 @@ fn handle_event(
   lines_to_skip: usize,
   loading_tx: &Sender<bool>,
 ) -> Result<bool, Box<dyn Error>> {
+  fn navigate_down(app: &mut App) {
+    app.table.next();
+    app.on_select();
+   }
+  fn navigate_up(app: &mut App) {
+    app.table.previous();
+    app.on_select();
+   }
   match event {
     Event::Input(event) => {
       if event.code == KeyCode::Char('c') && event.modifiers == KeyModifiers::CONTROL {
@@ -186,12 +194,16 @@ fn handle_event(
             app.reset_filter_text();
           }
           KeyCode::Down | KeyCode::Char('j') => {
-            app.table.next();
-            app.on_select();
+            navigate_down(app)
+          }
+          KeyCode::Char('n') if event.modifiers == KeyModifiers::CONTROL => {
+            navigate_down(app)
           }
           KeyCode::Up | KeyCode::Char('k') => {
-            app.table.previous();
-            app.on_select();
+            navigate_up(app)
+          }
+          KeyCode::Char('p') if event.modifiers == KeyModifiers::CONTROL => {
+            navigate_up(app)
           }
           KeyCode::Char('/') => {
             app.focused_panel = FocusedPanel::Search;
