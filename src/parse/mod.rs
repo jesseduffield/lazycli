@@ -35,17 +35,28 @@ pub fn parse(text: String) -> Vec<Row> {
       let chars = line.chars().collect::<Vec<char>>();
 
       for position in &column_indices[1..] {
-        push(&mut cells, chars[last..*position].to_owned());
+        let cell_chars = safe_vec_range(&chars, last, *position);
+
+        push(&mut cells, cell_chars);
         last = *position;
       }
-      push(&mut cells, chars[last..].to_owned());
+
+      push(&mut cells, safe_vec_range(&chars, last, chars.len()));
 
       Row::new(line.to_owned(), cells)
     })
     .collect()
 }
 
-fn push(cells: &mut Vec<String>, chars: Vec<char>) {
+fn safe_vec_range<'a, T>(v: &'a Vec<T>, from: usize, to: usize) -> Vec<&'a T> {
+  if from > to {
+    return vec![];
+  }
+
+  v.iter().skip(from).take(to - from).collect::<Vec<_>>()
+}
+
+fn push(cells: &mut Vec<String>, chars: Vec<&char>) {
   let slice = chars.into_iter().collect::<String>();
 
   cells.push(slice.trim_end().to_owned());
@@ -95,6 +106,39 @@ fn get_column_indices(text: &String) -> Vec<usize> {
 mod tests {
   use super::*;
   use pretty_assertions::assert_eq;
+
+  #[test]
+  fn test_one_line_cut_short() {
+    let text = "col1 col2 col3\n\
+                col1 col2 col3\n\
+                col1\n";
+
+    assert_eq!(
+      parse(String::from(text)),
+      vec![
+        Row {
+          original_line: String::from("col1 col2 col3"),
+          cells: vec![
+            String::from("col1"),
+            String::from("col2"),
+            String::from("col3"),
+          ],
+        },
+        Row {
+          original_line: String::from("col1 col2 col3"),
+          cells: vec![
+            String::from("col1"),
+            String::from("col2"),
+            String::from("col3"),
+          ],
+        },
+        Row {
+          original_line: String::from("col1"),
+          cells: vec![String::from("col1"), String::from(""), String::from(""),],
+        },
+      ],
+    )
+  }
 
   #[test]
   fn test_parse_docker_ps() {
