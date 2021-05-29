@@ -28,38 +28,40 @@ pub fn parse(text: String) -> Vec<Row> {
   text
     .lines()
     .map(|line| {
-      let mut cells = vec![];
-
-      let mut last = 0;
       // I want to get the chars as an array, then slice that up.
       let chars = line.chars().collect::<Vec<char>>();
 
-      for position in &column_indices[1..] {
-        let cell_chars = safe_vec_range(&chars, last, *position);
+      let char_len = [chars.len()];
 
-        push(&mut cells, cell_chars);
-        last = *position;
-      }
+      let positions = column_indices
+        .iter()
+        .chain(char_len.iter())
+        .collect::<Vec<_>>();
 
-      push(&mut cells, safe_vec_range(&chars, last, chars.len()));
+      let cells = positions
+        .iter()
+        .take(positions.len() - 1)
+        .enumerate()
+        .map(|(i, _)| {
+          safe_vec_range(&chars, positions[i], positions[i + 1])
+            .into_iter()
+            .collect::<String>()
+            .trim_end()
+            .to_owned()
+        })
+        .collect();
 
       Row::new(line.to_owned(), cells)
     })
     .collect()
 }
 
-fn safe_vec_range<'a, T>(v: &'a Vec<T>, from: usize, to: usize) -> Vec<&'a T> {
+fn safe_vec_range<'a, T>(v: &'a Vec<T>, from: &usize, to: &usize) -> Vec<&'a T> {
   if from > to {
     return vec![];
   }
 
-  v.iter().skip(from).take(to - from).collect::<Vec<_>>()
-}
-
-fn push(cells: &mut Vec<String>, chars: Vec<&char>) {
-  let slice = chars.into_iter().collect::<String>();
-
-  cells.push(slice.trim_end().to_owned());
+  v.iter().skip(*from).take(to - from).collect::<Vec<_>>()
 }
 
 fn get_column_indices(text: &String) -> Vec<usize> {
