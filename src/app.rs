@@ -5,6 +5,7 @@ use crate::{
   command,
   config::{Config, Profile},
   parse::Row,
+  profile_matching::command_matches,
   stateful_table::StatefulTable,
   template,
 };
@@ -35,10 +36,11 @@ pub struct App<'a> {
 impl<'a> App<'a> {
   // TODO: do we really need a reference to the config? We should probably move it in here. But then we need to still work out how to have a profile field. We could either make that a function or make it an immutable reference
   pub fn new(config: &'a Config, config_path: PathBuf, args: Args) -> App<'a> {
-    let profile = config
-      .profiles
-      .iter()
-      .find(|p| p.registered_commands.iter().any(|c| *c == args.command));
+    let profile = config.profiles.iter().find(|p| {
+      p.registered_commands
+        .iter()
+        .any(|c| command_matches(args.command.as_ref(), c))
+    });
 
     App {
       table: StatefulTable::new(0),

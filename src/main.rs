@@ -8,6 +8,7 @@ mod config;
 mod event_loop;
 mod os_commands;
 mod parse;
+mod profile_matching;
 mod stateful_table;
 mod template;
 mod terminal_manager;
