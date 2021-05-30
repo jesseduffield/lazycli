@@ -1,7 +1,12 @@
 mod char_pos_iter;
 
 use char_pos_iter::CharPosIter;
-use std::{collections::HashSet, iter::FromIterator};
+use itertools::Itertools;
+use std::{
+  cmp::min,
+  collections::HashSet,
+  iter::{once, FromIterator},
+};
 
 #[derive(PartialEq, Debug)]
 pub struct Row {
@@ -31,20 +36,15 @@ pub fn parse(text: String) -> Vec<Row> {
       // I want to get the chars as an array, then slice that up.
       let chars = line.chars().collect::<Vec<char>>();
 
-      let char_len = [chars.len()];
+      let char_len = chars.len();
 
-      let positions = column_indices
+      let cells = column_indices
         .iter()
-        .chain(char_len.iter())
-        .collect::<Vec<_>>();
-
-      let cells = positions
-        .iter()
-        .take(positions.len() - 1)
-        .enumerate()
-        .map(|(i, _)| {
-          safe_vec_range(&chars, positions[i], positions[i + 1])
-            .into_iter()
+        .chain(once(&char_len))
+        .tuple_windows::<(_, _)>()
+        .map(|(i0, i1)| {
+          chars[min(*i0, char_len)..min(*i1, char_len)]
+            .iter()
             .collect::<String>()
             .trim_end()
             .to_owned()
@@ -54,14 +54,6 @@ pub fn parse(text: String) -> Vec<Row> {
       Row::new(line.to_owned(), cells)
     })
     .collect()
-}
-
-fn safe_vec_range<'a, T>(v: &'a Vec<T>, from: &usize, to: &usize) -> Vec<&'a T> {
-  if from > to {
-    return vec![];
-  }
-
-  v.iter().skip(*from).take(to - from).collect::<Vec<_>>()
 }
 
 fn get_column_indices(text: &String) -> Vec<usize> {

@@ -22,6 +22,7 @@ serde = "1.0"
 serde_yaml = "0.8.15"
 directories = "3.0"
 ticker = "0.1.1"
+itertools = "0.10.0"
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
