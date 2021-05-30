@@ -206,11 +206,7 @@ fn handle_event(
               app,
               loading_tx,
               tx,
-              format!(
-                "{} \"{}\"",
-                os_commands::open_command(),
-                app.config_path.to_str().unwrap()
-              ),
+              os_commands::open_command(app.config_path.to_str().unwrap()),
             );
           }
           KeyCode::Char(c) => {
