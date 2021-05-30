@@ -3,7 +3,6 @@ mod char_pos_iter;
 use char_pos_iter::CharPosIter;
 use itertools::Itertools;
 use std::{
-  cmp::min,
   collections::HashSet,
   iter::{once, FromIterator},
 };
@@ -28,26 +27,27 @@ impl Row {
 }
 
 pub fn parse(text: String) -> Vec<Row> {
-  let column_indices = get_column_indices(&text);
+  let column_sizes = get_column_indices(&text)
+    .into_iter()
+    .tuple_windows()
+    .map(|(i0, i1)| i1 - i0)
+    .chain(once(usize::MAX))
+    .collect::<Vec<_>>();
 
   text
     .lines()
     .map(|line| {
       // I want to get the chars as an array, then slice that up.
-      let chars = line.chars().collect::<Vec<char>>();
-
-      let char_len = chars.len();
-
-      let cells = column_indices
+      let cells = column_sizes
         .iter()
-        .chain(once(&char_len))
-        .tuple_windows::<(_, _)>()
-        .map(|(i0, i1)| {
-          chars[min(*i0, char_len)..min(*i1, char_len)]
-            .iter()
-            .collect::<String>()
-            .trim_end()
-            .to_owned()
+        .scan(line.chars(), |chars, column_size| {
+          Some(
+            chars
+              .take(*column_size)
+              .collect::<String>()
+              .trim_end()
+              .to_owned(),
+          )
         })
         .collect();
 
