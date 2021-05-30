@@ -1,7 +1,11 @@
 mod char_pos_iter;
 
 use char_pos_iter::CharPosIter;
-use std::{collections::HashSet, iter::FromIterator};
+use itertools::Itertools;
+use std::{
+  collections::HashSet,
+  iter::{once, FromIterator},
+};
 
 #[derive(PartialEq, Debug)]
 pub struct Row {
@@ -23,32 +27,33 @@ impl Row {
 }
 
 pub fn parse(text: String) -> Vec<Row> {
-  let column_indices = get_column_indices(&text);
+  let column_sizes = get_column_indices(&text)
+    .into_iter()
+    .tuple_windows()
+    .map(|(i0, i1)| i1 - i0)
+    .chain(once(usize::MAX))
+    .collect::<Vec<_>>();
 
   text
     .lines()
     .map(|line| {
-      let mut cells = vec![];
-
-      let mut last = 0;
       // I want to get the chars as an array, then slice that up.
-      let chars = line.chars().collect::<Vec<char>>();
-
-      for position in &column_indices[1..] {
-        push(&mut cells, chars[last..*position].to_owned());
-        last = *position;
-      }
-      push(&mut cells, chars[last..].to_owned());
+      let cells = column_sizes
+        .iter()
+        .scan(line.chars(), |chars, column_size| {
+          Some(
+            chars
+              .take(*column_size)
+              .collect::<String>()
+              .trim_end()
+              .to_owned(),
+          )
+        })
+        .collect();
 
       Row::new(line.to_owned(), cells)
     })
     .collect()
-}
-
-fn push(cells: &mut Vec<String>, chars: Vec<char>) {
-  let slice = chars.into_iter().collect::<String>();
-
-  cells.push(slice.trim_end().to_owned());
 }
 
 fn get_column_indices(text: &String) -> Vec<usize> {
@@ -95,6 +100,39 @@ fn get_column_indices(text: &String) -> Vec<usize> {
 mod tests {
   use super::*;
   use pretty_assertions::assert_eq;
+
+  #[test]
+  fn test_one_line_cut_short() {
+    let text = "col1 col2 col3\n\
+                col1 col2 col3\n\
+                col1\n";
+
+    assert_eq!(
+      parse(String::from(text)),
+      vec![
+        Row {
+          original_line: String::from("col1 col2 col3"),
+          cells: vec![
+            String::from("col1"),
+            String::from("col2"),
+            String::from("col3"),
+          ],
+        },
+        Row {
+          original_line: String::from("col1 col2 col3"),
+          cells: vec![
+            String::from("col1"),
+            String::from("col2"),
+            String::from("col3"),
+          ],
+        },
+        Row {
+          original_line: String::from("col1"),
+          cells: vec![String::from("col1"), String::from(""), String::from(""),],
+        },
+      ],
+    )
+  }
 
   #[test]
   fn test_parse_docker_ps() {
