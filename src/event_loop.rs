@@ -172,11 +172,11 @@ fn handle_event(
   fn navigate_down(app: &mut App) {
     app.table.next();
     app.on_select();
-   }
+  }
   fn navigate_up(app: &mut App) {
     app.table.previous();
     app.on_select();
-   }
+  }
   match event {
     Event::Input(event) => {
       if event.code == KeyCode::Char('c') && event.modifiers == KeyModifiers::CONTROL {
@@ -193,18 +193,10 @@ fn handle_event(
           KeyCode::Esc => {
             app.reset_filter_text();
           }
-          KeyCode::Down | KeyCode::Char('j') => {
-            navigate_down(app)
-          }
-          KeyCode::Char('n') if event.modifiers == KeyModifiers::CONTROL => {
-            navigate_down(app)
-          }
-          KeyCode::Up | KeyCode::Char('k') => {
-            navigate_up(app)
-          }
-          KeyCode::Char('p') if event.modifiers == KeyModifiers::CONTROL => {
-            navigate_up(app)
-          }
+          KeyCode::Down | KeyCode::Char('j') => navigate_down(app),
+          KeyCode::Char('n') if event.modifiers == KeyModifiers::CONTROL => navigate_down(app),
+          KeyCode::Up | KeyCode::Char('k') => navigate_up(app),
+          KeyCode::Char('p') if event.modifiers == KeyModifiers::CONTROL => navigate_up(app),
           KeyCode::Char('/') => {
             app.focused_panel = FocusedPanel::Search;
           }
@@ -214,11 +206,7 @@ fn handle_event(
               app,
               loading_tx,
               tx,
-              format!(
-                "{} \"{}\"",
-                os_commands::open_command(),
-                app.config_path.to_str().unwrap()
-              ),
+              os_commands::open_command(app.config_path.to_str().unwrap()),
             );
           }
           KeyCode::Char(c) => {
