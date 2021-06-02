@@ -1,5 +1,7 @@
+mod profile_matching;
 pub mod storage;
 
+use profile_matching::command_matches;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -101,6 +103,14 @@ impl Config {
 
   pub fn from_yaml(yaml: String) -> Result<Config, serde_yaml::Error> {
     serde_yaml::from_str(&yaml)
+  }
+
+  pub fn find_profile_for_command(&self, command: &str) -> Option<&Profile> {
+    self.profiles.iter().find(|p| {
+      p.registered_commands
+        .iter()
+        .any(|c| command_matches(command, c))
+    })
   }
 
   pub fn new() -> Config {
