@@ -32,7 +32,7 @@ lazycli is best suited towards any command-line program that spits out a list of
 ### Via Cargo
 
 ```
-cargo install lazycli
+cargo install --locked lazycli
 ```
 
 
@@ -49,7 +49,7 @@ git clone https://github.com/jesseduffield/lazycli.git
 ```
 2) install
 ```
-cargo install --path .
+cargo install --locked --path .
 ```
 3) run
 ```
