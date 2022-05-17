@@ -1,4 +1,4 @@
-use std::{env, error::Error, fs::File, io::prelude::*, path::PathBuf};
+use std::{error::Error, fs::File, io::prelude::*, path::PathBuf};
 
 use super::Config;
 
