@@ -133,7 +133,7 @@ impl Config {
             },
             KeyBinding {
               key: 'o',
-              command: String::from("open $0"),
+              command: crate::os_commands::open_command("$0"),
               ..Default::default()
             },
             KeyBinding {
