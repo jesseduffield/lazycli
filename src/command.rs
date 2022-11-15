@@ -23,8 +23,8 @@ fn test_run_command() {
 #[test]
 fn test_run_command_fail() {
   let result = run_command("asldfkjh test");
-  assert_eq!(
+  assert!(matches!(
     result,
-    Err(String::from("bash: asldfkjh: command not found\n"))
-  );
+    Err(e) if e.contains("command not found") && e.contains("asldfkjh"),
+  ));
 }
