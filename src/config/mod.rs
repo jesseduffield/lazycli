@@ -52,6 +52,10 @@ pub struct KeyBinding {
   pub confirm: bool,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub regex: Option<String>,
+  #[serde(default = "bool::default")]
+  #[serde(skip_serializing_if = "IsFalse::is_false")]  
+  pub quit_after_running: bool,
+
 }
 
 impl Default for KeyBinding {
@@ -61,6 +65,7 @@ impl Default for KeyBinding {
       command: String::from(""),
       confirm: false,
       regex: None,
+      quit_after_running: false,
     }
   }
 }

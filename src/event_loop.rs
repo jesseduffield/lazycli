@@ -211,6 +211,11 @@ fn handle_event(
           }
           KeyCode::Char(c) => {
             handle_keybinding_press(app, loading_tx, tx, c);
+            if app.terminate_immediatly{
+              // command executed is configured to terminate after execution
+              terminal_manager.teardown()?;
+              return Ok(false);
+            }
           }
           _ => (),
         },
@@ -246,6 +251,11 @@ fn handle_event(
             let cloned_command = command.clone();
             run_command(app, loading_tx, tx, cloned_command);
             app.focused_panel = FocusedPanel::Table;
+            if app.terminate_after_confirmation_popup{
+              // Command executed is configured to shut down lazycli after running
+              terminal_manager.teardown()?;
+              return Ok(false);		
+            }
           }
           KeyCode::Char('q') => {
             terminal_manager.teardown()?;
@@ -253,6 +263,8 @@ fn handle_event(
           }
           KeyCode::Esc => {
             app.focused_panel = FocusedPanel::Table;
+            // user cancelled the command, thus termination afterwards is off the table
+	          app.terminate_after_confirmation_popup = false
           }
           _ => {}
         },
@@ -288,9 +300,17 @@ fn handle_keybinding_press(
   let command = template::resolve_command(binding, app.get_selected_row()?);
 
   if binding.confirm {
+    if binding.quit_after_running{
+        // Command is configured to terminate after execution, thus the flag telling the confirmation popup to terminate after running the command
+        app.terminate_after_confirmation_popup=true;		
+    }	
     app.focused_panel = FocusedPanel::ConfirmationPopup(command);
   } else {
     run_command(app, loading_tx, tx, command);
+    if binding.quit_after_running{
+      // Cammand is configured to terminate after execution, thus the kill switch
+      app.terminate_immediatly=true
+    }
   }
 
   Some(())

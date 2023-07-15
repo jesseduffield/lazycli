@@ -30,6 +30,8 @@ pub struct App<'a> {
   pub focused_panel: FocusedPanel,
   pub selected_item_content: String,
   pub config_path: PathBuf,
+  pub terminate_after_confirmation_popup: bool,     // makes the confirmation popup terminate lazycli if the user confirmed running the command
+  pub terminate_immediatly: bool,     		          // makes lazycli terminate directly
 }
 
 impl<'a> App<'a> {
@@ -48,6 +50,8 @@ impl<'a> App<'a> {
       focused_panel: FocusedPanel::Table,
       selected_item_content: String::from(""),
       config_path,
+      terminate_after_confirmation_popup: false, 
+      terminate_immediatly: false   
     }
   }
 
